@@ -1,0 +1,522 @@
+{
+  "events": [
+    {
+      "name": "launch_started",
+      "result": {
+        "host": "127.0.0.1",
+        "server_count": 4
+      }
+    },
+    {
+      "name": "launch",
+      "result": {
+        "servers": [
+          {
+            "pid": 2563,
+            "port": 36223,
+            "share_id": 0
+          },
+          {
+            "pid": 2565,
+            "port": 44189,
+            "share_id": 1
+          },
+          {
+            "pid": 2567,
+            "port": 48439,
+            "share_id": 2
+          },
+          {
+            "pid": 2569,
+            "port": 48013,
+            "share_id": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "doctor",
+      "result": {
+        "result": "ready",
+        "servers": [
+          {
+            "pid": 2563,
+            "protocol": 1,
+            "share_id": 0
+          },
+          {
+            "pid": 2565,
+            "protocol": 1,
+            "share_id": 1
+          },
+          {
+            "pid": 2567,
+            "protocol": 1,
+            "share_id": 2
+          },
+          {
+            "pid": 2569,
+            "protocol": 1,
+            "share_id": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [],
+        "command": "keygen",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"protocol\": 1}"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/writer/owner.pub"
+        ],
+        "command": "trust-owner",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\"}"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "sample",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/sample-v1.bin"
+        ],
+        "command": "create",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"acknowledgments\": 4, \"file\": \"sample\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"sha256\": \"6dd0d3ef0ceb09329cbd69c2dc9712ef6c1e40a526168be99dd209a36f75dd46\", \"version\": 1}"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "sample",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/reader-v1.bin",
+          "--owner",
+          "476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0"
+        ],
+        "command": "read",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"file\": \"sample\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"sha256\": \"6dd0d3ef0ceb09329cbd69c2dc9712ef6c1e40a526168be99dd209a36f75dd46\", \"version\": 1}"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "sample",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/reader-v1.checkpoint.json",
+          "--owner",
+          "476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0"
+        ],
+        "command": "export-checkpoint",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"chain\": [\"3465d259bfec2839a8575bf76689e1d7a6f038c6ec5c9d2f9cd43143a716b3a7\"], \"file\": \"sample\", \"head\": \"3465d259bfec2839a8575bf76689e1d7a6f038c6ec5c9d2f9cd43143a716b3a7\", \"history\": [{\"body\": {\"action\": \"put\", \"file\": \"sample\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"parent\": null, \"public_key\": \"f075282dc5ef9741d8eeeb4b2b9075cac7003a9aa14404d939e855b3ba68eade\", \"size\": 131109, \"stripes\": [{\"blocks\": [{\"sha256\": \"b03a3e1e12b699bd2c526e13a0d73f39b761de545f248b3d5faac391ad3b8d97\", \"share_id\": 0, \"signature\": \"400eHKrgA1rsjrx/GFACxnaap82Q/ZKBRo+aeYf6Fy+8afGuy2UZuQqVchwBssCylJBpvd+XXnKMEIqYgLvFDw==\"}, {\"sha256\": \"cf749558d33b4428acf8a170f182bf1c17261e7518dee0f6b9977fe5b793955f\", \"share_id\": 1, \"signature\": \"nCqfMXyppc4basksi+O6cL3NKuM2bdiO/+q47bb0Vw7WHRy4iEL7jgZC1DAdESmJAbKlMHcOHe1fb3TztXbSBg==\"}, {\"sha256\": \"5d999de0788522646d07d9f2e3b3e3e0f899c399ff974c45416cb80b1c4167fd\", \"share_id\": 2, \"signature\": \"LrGlsnr07BPTLyPAlAUdOmaZp8MC70pIP6zqz+v1Qol+19DA855TxIlF8D5gtQhLShOjCOpVexEft9Rbc2QTCA==\"}, {\"sha256\": \"79d5504255b0f1809a8365a8f6e72a16486ed511172367f3e2fc2710e588ae07\", \"share_id\": 3, \"signature\": \"VhzBIX/bftrN/imXANjC44rQxoBhJp8+xkJibXKyG8LNEk5TrwuCCNVcw1M5PFhMZRi9GflwbEX5itFMdmMzBQ==\"}], \"length\": 131072}, {\"blocks\": [{\"sha256\": \"b1dea6e3dbb61535ae122bbfe126e7d25820814bd59a59fb9a0153f70e161290\", \"share_id\": 0, \"signature\": \"TMI0QZFJhpC2SL8Xis5MSkBKth5f9VinJg1DnMFa2qJg3Xe+Y3lk09OUMfnggswZVjaRPiO+5FUrM+zUH2p7DQ==\"}, {\"sha256\": \"6b1da689bdd0e64ffc954151c012d5e80468317eb173acf05e5d0851b7896a84\", \"share_id\": 1, \"signature\": \"jMCLwaw9od7qKqIWkAtWgCMoYGkcZ6/qq/dvr1Ysy9GYYsTnGgXHNnPS2xU71JUqk7NXt0FOr1vtxMyocgydBg==\"}, {\"sha256\": \"51edde3901e099cec0783c3b3e7a2e48a839adebe3d2051c7987f9ed45d8ddcc\", \"share_id\": 2, \"signature\": \"z5HQTbK5FP6O6iEJw0oy64PcMH84qUve5BFDKHw/d6q/iCOaBPgdCM5RBC+5lDfZ2UKNm1d79VF6WZEeZRUkCg==\"}, {\"sha256\": \"bc023b30fe3e0fbfc9bf23fa2302e213d32170a24e6307c42a9126838c320f1b\", \"share_id\": 3, \"signature\": \"pZT9NWSPwSmN4/ms+q0Qi2UwLJrLGg0obwbzmB2HXEUN1RZ8dFUxl8bUc0+q0wndbERqd7A1a79pOpANsUnQDA==\"}], \"length\": 37}], \"version\": 1}, \"signature\": \"tnCpXDMK6uRsMzF39aWAv1CtSyo4FNpjSNakoP30k3SUzTJJY2tcwEEL7hePSGFF3qmZjCQMrYmrUafzFV94AQ==\"}], \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"version\": 1}"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "sample",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/sample-v1.bin"
+        ],
+        "command": "create",
+        "returncode": 2,
+        "stderr": "{\"error\": \"sample\"}",
+        "stdout": ""
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "sample",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/sample-v2.bin"
+        ],
+        "command": "put",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"acknowledgments\": 4, \"file\": \"sample\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"sha256\": \"8991bc6b9bbd28a6913d4a1c844394240a60ef25e2b79f1a703066f7521b130f\", \"version\": 2}"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "sample",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/reader-v2.bin",
+          "--owner",
+          "476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0"
+        ],
+        "command": "read",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"file\": \"sample\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"sha256\": \"8991bc6b9bbd28a6913d4a1c844394240a60ef25e2b79f1a703066f7521b130f\", \"version\": 2}"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "sample",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/reader-v2.checkpoint.json",
+          "--owner",
+          "476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0"
+        ],
+        "command": "export-checkpoint",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"chain\": [\"3465d259bfec2839a8575bf76689e1d7a6f038c6ec5c9d2f9cd43143a716b3a7\", \"08af0f448cd44ce8fc68f070b4d97117a32f98e9912f9185e7bf7ccddf342c73\"], \"file\": \"sample\", \"head\": \"08af0f448cd44ce8fc68f070b4d97117a32f98e9912f9185e7bf7ccddf342c73\", \"history\": [{\"body\": {\"action\": \"put\", \"file\": \"sample\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"parent\": null, \"public_key\": \"f075282dc5ef9741d8eeeb4b2b9075cac7003a9aa14404d939e855b3ba68eade\", \"size\": 131109, \"stripes\": [{\"blocks\": [{\"sha256\": \"b03a3e1e12b699bd2c526e13a0d73f39b761de545f248b3d5faac391ad3b8d97\", \"share_id\": 0, \"signature\": \"400eHKrgA1rsjrx/GFACxnaap82Q/ZKBRo+aeYf6Fy+8afGuy2UZuQqVchwBssCylJBpvd+XXnKMEIqYgLvFDw==\"}, {\"sha256\": \"cf749558d33b4428acf8a170f182bf1c17261e7518dee0f6b9977fe5b793955f\", \"share_id\": 1, \"signature\": \"nCqfMXyppc4basksi+O6cL3NKuM2bdiO/+q47bb0Vw7WHRy4iEL7jgZC1DAdESmJAbKlMHcOHe1fb3TztXbSBg==\"}, {\"sha256\": \"5d999de0788522646d07d9f2e3b3e3e0f899c399ff974c45416cb80b1c4167fd\", \"share_id\": 2, \"signature\": \"LrGlsnr07BPTLyPAlAUdOmaZp8MC70pIP6zqz+v1Qol+19DA855TxIlF8D5gtQhLShOjCOpVexEft9Rbc2QTCA==\"}, {\"sha256\": \"79d5504255b0f1809a8365a8f6e72a16486ed511172367f3e2fc2710e588ae07\", \"share_id\": 3, \"signature\": \"VhzBIX/bftrN/imXANjC44rQxoBhJp8+xkJibXKyG8LNEk5TrwuCCNVcw1M5PFhMZRi9GflwbEX5itFMdmMzBQ==\"}], \"length\": 131072}, {\"blocks\": [{\"sha256\": \"b1dea6e3dbb61535ae122bbfe126e7d25820814bd59a59fb9a0153f70e161290\", \"share_id\": 0, \"signature\": \"TMI0QZFJhpC2SL8Xis5MSkBKth5f9VinJg1DnMFa2qJg3Xe+Y3lk09OUMfnggswZVjaRPiO+5FUrM+zUH2p7DQ==\"}, {\"sha256\": \"6b1da689bdd0e64ffc954151c012d5e80468317eb173acf05e5d0851b7896a84\", \"share_id\": 1, \"signature\": \"jMCLwaw9od7qKqIWkAtWgCMoYGkcZ6/qq/dvr1Ysy9GYYsTnGgXHNnPS2xU71JUqk7NXt0FOr1vtxMyocgydBg==\"}, {\"sha256\": \"51edde3901e099cec0783c3b3e7a2e48a839adebe3d2051c7987f9ed45d8ddcc\", \"share_id\": 2, \"signature\": \"z5HQTbK5FP6O6iEJw0oy64PcMH84qUve5BFDKHw/d6q/iCOaBPgdCM5RBC+5lDfZ2UKNm1d79VF6WZEeZRUkCg==\"}, {\"sha256\": \"bc023b30fe3e0fbfc9bf23fa2302e213d32170a24e6307c42a9126838c320f1b\", \"share_id\": 3, \"signature\": \"pZT9NWSPwSmN4/ms+q0Qi2UwLJrLGg0obwbzmB2HXEUN1RZ8dFUxl8bUc0+q0wndbERqd7A1a79pOpANsUnQDA==\"}], \"length\": 37}], \"version\": 1}, \"signature\": \"tnCpXDMK6uRsMzF39aWAv1CtSyo4FNpjSNakoP30k3SUzTJJY2tcwEEL7hePSGFF3qmZjCQMrYmrUafzFV94AQ==\"}, {\"body\": {\"action\": \"put\", \"file\": \"sample\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"parent\": \"3465d259bfec2839a8575bf76689e1d7a6f038c6ec5c9d2f9cd43143a716b3a7\", \"public_key\": \"f075282dc5ef9741d8eeeb4b2b9075cac7003a9aa14404d939e855b3ba68eade\", \"size\": 73019, \"stripes\": [{\"blocks\": [{\"sha256\": \"99a484b8dbf234d3427a60d56d57f7bc4eb65da627dfae4c57960e0cf1e0b308\", \"share_id\": 0, \"signature\": \"uAb+HG2tD9LRlLg5Z561HmLkiiwvSHb1L4PQAi4gp0RsTVkhnpjbp0NmefSaLY7PKTrYp62/YH/5jnCchECFDw==\"}, {\"sha256\": \"7a2c01b34098a3ef7972d4b788c15b28bf8fc0213b12cccb2e4560c7fa4b02ad\", \"share_id\": 1, \"signature\": \"6jW7CZF6Cs55nacJCUU3yKjCFN2Q33ZgDE4pDX9hIkYDh+V1HR6q18K6fsLKio9ETVhPO9RwPy8tWlph5Wk9AQ==\"}, {\"sha256\": \"b739c65b172be2845097a300594c2ece97bcb539310a37e576d24217e2e49345\", \"share_id\": 2, \"signature\": \"RVhGSZU4h0Hiu22mrXMnYUHwSK3vqW6R+PX7o41Fv5EDWcsVfOHUebcDngYCR5jeb5FHKMF71idWaWC++yyUAQ==\"}, {\"sha256\": \"3592651ed41cc651898aa763f59da8869f862f62a86f991f70470febbd814298\", \"share_id\": 3, \"signature\": \"oeQiJE+7z7PdyADBnSBgQnqktVJhHtp2p6GbSsEb+53dS5/OAJQZpJ3gyKJ4wrmpkRi0kRa4VSOjGwgp2DQsAg==\"}], \"length\": 73019}], \"version\": 2}, \"signature\": \"BkdKYcwyrHkX+bHRWBZIbZqVMqe374/p484ygavazCQTETDm5p10aDe9g4WqHoR8jJ5LKhLULmFkYP+9LUQ7DQ==\"}], \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"version\": 2}"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/reader-v1.checkpoint.json",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/reader-v2.checkpoint.json"
+        ],
+        "command": "audit-checkpoints",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"file\": \"sample\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"relation\": \"right-extends-left\"}"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "sample",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/rollback.bin",
+          "--owner",
+          "476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0"
+        ],
+        "command": "read",
+        "returncode": 2,
+        "stderr": "{\"error\": \"signed server history does not extend the reader's saved checkpoint\"}",
+        "stdout": ""
+      }
+    },
+    {
+      "name": "rollback_rejected",
+      "result": {
+        "checkpoint": 2,
+        "result": "rejected",
+        "server_history": 1
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "sample",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/replayed-share.bin",
+          "--owner",
+          "476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0"
+        ],
+        "command": "read",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"file\": \"sample\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"sha256\": \"8991bc6b9bbd28a6913d4a1c844394240a60ef25e2b79f1a703066f7521b130f\", \"version\": 2}"
+      }
+    },
+    {
+      "name": "share_faults",
+      "result": {
+        "result": "current bytes reconstructed",
+        "server_0": "old signed share replayed at current version",
+        "server_1": "stopped",
+        "valid_shares": [
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "one-down",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/one-down.bin"
+        ],
+        "command": "create",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"acknowledgments\": 3, \"file\": \"one-down\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"sha256\": \"874b35f27dec12b89c868ca3a533509434842f878dc7bd4bf58345c4e5c88dca\", \"version\": 1}"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "one-down",
+          "--target",
+          "3",
+          "--owner",
+          "476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0"
+        ],
+        "command": "repair",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"file\": \"one-down\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"repaired_versions\": [1], \"target\": 3}"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "one-down",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/repaired.bin",
+          "--owner",
+          "476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0"
+        ],
+        "command": "read",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"file\": \"one-down\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"sha256\": \"874b35f27dec12b89c868ca3a533509434842f878dc7bd4bf58345c4e5c88dca\", \"version\": 1}"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "pending",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/pending-v1.bin"
+        ],
+        "command": "create",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"acknowledgments\": 4, \"file\": \"pending\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"sha256\": \"6b944ec7ccfef00548458309d4abef9511956acb5032881408efcc727ef8982f\", \"version\": 1}"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "pending",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/offline-read.bin",
+          "--owner",
+          "476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0"
+        ],
+        "command": "read",
+        "returncode": 2,
+        "stderr": "{\"error\": \"metadata needs 3 server responses; received 2\"}",
+        "stdout": ""
+      }
+    },
+    {
+      "name": "metadata_quorum_failure",
+      "result": {
+        "available_responses": 2,
+        "required_responses": 3,
+        "result": "read rejected"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "pending",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/pending-v2.bin"
+        ],
+        "command": "put",
+        "returncode": 3,
+        "stderr": "{\"outcome\": \"uncertain\", \"error\": \"only 2 of 3 required acknowledgments arrived; retry the same pending operation\"}",
+        "stdout": ""
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "pending"
+        ],
+        "command": "retry",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"acknowledgments\": 4, \"file\": \"pending\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"retried\": true, \"version\": 2}"
+      }
+    },
+    {
+      "name": "uncertain_retry",
+      "result": {
+        "pending_sha256": "964dba507ad3eb4cae9232fb3dfb025ca4b0f74997b72f536c4d016aff040f21",
+        "resolved_version": 2,
+        "result": "same pending operation committed"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "pending",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/pending-v2-out.bin",
+          "--owner",
+          "476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0"
+        ],
+        "command": "read",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"file\": \"pending\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"sha256\": \"972366d680d28a912d14aa8823df5c281bd26830f8488517b3727dbf502de3e8\", \"version\": 2}"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "sample"
+        ],
+        "command": "delete",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"acknowledgments\": 4, \"action\": \"delete\", \"file\": \"sample\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"version\": 3}"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "--owner",
+          "476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0"
+        ],
+        "command": "list",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "[{\"action\": \"put\", \"file\": \"one-down\", \"head\": \"0bea27c61c01fc710c83913568c99bc3d533e239beb18631f89bbd081a1a6003\", \"size\": 527, \"version\": 1}, {\"action\": \"put\", \"file\": \"pending\", \"head\": \"b1b1e234884927cfce7ecad617938fb6e4f0979f03f42c46ec8cf5e131044d44\", \"size\": 736, \"version\": 2}]"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "sample",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/sample-v1.bin"
+        ],
+        "command": "put",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"acknowledgments\": 4, \"file\": \"sample\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"sha256\": \"6dd0d3ef0ceb09329cbd69c2dc9712ef6c1e40a526168be99dd209a36f75dd46\", \"version\": 4}"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "sample",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/recreated.bin",
+          "--owner",
+          "476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0"
+        ],
+        "command": "read",
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"file\": \"sample\", \"owner\": \"476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0\", \"sha256\": \"6dd0d3ef0ceb09329cbd69c2dc9712ef6c1e40a526168be99dd209a36f75dd46\", \"version\": 4}"
+      }
+    },
+    {
+      "name": "cli",
+      "result": {
+        "args": [
+          "no-such-file",
+          "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/scratch/missing.bin",
+          "--owner",
+          "476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0"
+        ],
+        "command": "read",
+        "returncode": 2,
+        "stderr": "{\"error\": \"no-such-file\"}",
+        "stdout": ""
+      }
+    },
+    {
+      "name": "doctor",
+      "result": {
+        "result": "ready",
+        "servers": [
+          {
+            "pid": 2563,
+            "protocol": 1,
+            "share_id": 0
+          },
+          {
+            "pid": 2643,
+            "protocol": 1,
+            "share_id": 1
+          },
+          {
+            "pid": 2695,
+            "protocol": 1,
+            "share_id": 2
+          },
+          {
+            "pid": 2697,
+            "protocol": 1,
+            "share_id": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "drive",
+      "result": {
+        "files": [
+          "sample",
+          "one-down",
+          "pending"
+        ],
+        "owner": "476f7543a15f2456ce28a0fa10bf9d7647a572c72c31d309b5be769f269f3da0",
+        "result": "all normal and fault journeys passed"
+      }
+    },
+    {
+      "name": "evidence",
+      "result": {
+        "events": 34,
+        "path": "/home/runner/work/byzantine-erasure-storage/byzantine-erasure-storage/.agents/runs/ci-39720831869-1/evidence",
+        "server_logs": [
+          "server-0.log",
+          "server-1.log",
+          "server-2.log",
+          "server-3.log"
+        ]
+      }
+    },
+    {
+      "name": "cleanup",
+      "result": {
+        "errors": [],
+        "evidence_retained": true,
+        "owned_processes_alive": [],
+        "passed": true,
+        "scratch_removed": true
+      }
+    }
+  ],
+  "run_id": "ci-39720831869-1",
+  "verdict": {
+    "cleanup": {
+      "errors": [],
+      "evidence_retained": true,
+      "owned_processes_alive": [],
+      "passed": true,
+      "scratch_removed": true
+    },
+    "cleanup_failure": null,
+    "failure": null,
+    "passed": true
+  }
+}

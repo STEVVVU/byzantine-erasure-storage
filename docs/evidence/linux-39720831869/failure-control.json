@@ -1,0 +1,70 @@
+{
+  "events": [
+    {
+      "name": "launch_started",
+      "result": {
+        "host": "127.0.0.1",
+        "server_count": 4
+      }
+    },
+    {
+      "name": "launch",
+      "result": {
+        "servers": [
+          {
+            "pid": 2778,
+            "port": 46593,
+            "share_id": 0
+          },
+          {
+            "pid": 2780,
+            "port": 51885,
+            "share_id": 1
+          },
+          {
+            "pid": 2782,
+            "port": 40677,
+            "share_id": 2
+          },
+          {
+            "pid": 2784,
+            "port": 55059,
+            "share_id": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "failure_injection",
+      "result": {
+        "point": "after_launch"
+      }
+    },
+    {
+      "name": "cleanup",
+      "result": {
+        "errors": [],
+        "evidence_retained": true,
+        "owned_processes_alive": [],
+        "passed": true,
+        "scratch_removed": true
+      }
+    }
+  ],
+  "run_id": "ci-negative-39720831869-1",
+  "verdict": {
+    "cleanup": {
+      "errors": [],
+      "evidence_retained": true,
+      "owned_processes_alive": [],
+      "passed": true,
+      "scratch_removed": true
+    },
+    "cleanup_failure": null,
+    "failure": {
+      "message": "injected failure after launch",
+      "type": "RuntimeError"
+    },
+    "passed": false
+  }
+}

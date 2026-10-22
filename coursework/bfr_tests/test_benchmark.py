@@ -6,6 +6,22 @@ helpers = vars(benchmark)
 
 
 class BenchmarkContractTests(unittest.TestCase):
+    def test_profile_and_stability_artifacts_cover_frozen_sizes(self):
+        sizes = [4096, 131072, 1048576]
+        artifacts = helpers["diagnostic_artifacts"](sizes)
+        self.assertEqual([item["size"] for item in artifacts], sizes)
+        self.assertEqual([item["profile_kind"] for item in artifacts], ["exact-read"] * 3)
+        self.assertEqual([item["profile"] for item in artifacts], [
+            "client-read.prof", "client-read-131072.prof", "client-read-1048576.prof"])
+        self.assertEqual([item["profile_receipt"] for item in artifacts], [
+            "profile.usage", "profile-131072.usage", "profile-1048576.usage"])
+        self.assertEqual([item["stability_receipt"] for item in artifacts], [
+            "stability.usage", "stability-131072.usage", "stability-1048576.usage"])
+        self.assertEqual(len({item[key] for item in artifacts for key in ("profile_receipt", "stability_receipt")}), 6)
+        smoke = helpers["diagnostic_artifacts"]([4096])
+        self.assertEqual(smoke[0]["profile"], "client-read.prof")
+        self.assertEqual(smoke[0]["stability_receipt"], "stability.usage")
+
     def test_only_the_observed_missing_metadata_quorum_is_expected(self):
         sample = {"returncode": 2, "timed_out": False, "stderr": '{"error":"metadata needs 3 server responses; received 2"}'}
         self.assertTrue(helpers["expected_quorum_rejection"](sample))

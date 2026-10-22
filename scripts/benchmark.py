@@ -54,6 +54,17 @@ def expected_quorum_rejection(value):
     return isinstance(error, dict) and error.get("error") == "metadata needs 3 server responses; received 2"
 
 
+def diagnostic_artifacts(sizes):
+    artifacts = []
+    for index, size in enumerate(sizes):
+        suffix = "" if index == 0 else f"-{size}"
+        artifacts.append({"size": size, "profile_kind": "exact-read",
+                          "output": f"profile-output{suffix}", "profile": f"client-read{suffix}.prof",
+                          "profile_text": f"client-read{suffix}-profile.txt", "profile_receipt": f"profile{suffix}.usage",
+                          "stability_output": f"stable-output{suffix}", "stability_receipt": f"stability{suffix}.usage"})
+    return artifacts
+
+
 def resources(run):
     return {str(s["share_id"]): {"rss_bytes": psutil.Process(s["active_pid"]).memory_info().rss,
                                  "cpu_seconds": sum(psutil.Process(s["active_pid"]).cpu_times()[:2])}
@@ -199,24 +210,34 @@ def benchmark(run, repeats, smoke):
             assert hashlib.sha256(result.read_bytes()).hexdigest() == digest
             cases.append({"kind": "recovery", "size": size, "repeat": repeat, "one_down_create_seconds": write_seconds, "restart_ready_seconds": recovery, "repair_seconds": repair_time, "correct": True})
 
-    source = run.scratch / f"input-{sizes[0]}"
-    args = [sys.executable, "-m", "cProfile", "-o", str(run.evidence / "client-read.prof"), str(ROOT / "scripts/bfr.py"), "--state", str(writer), "--servers", *run.urls(), "read", f"sample-{sizes[0]}", str(run.scratch / "profile-output"), "--owner", owner]
-    result = command(args, run.evidence / "profile.usage")
-    assert result["returncode"] == 0
-    assert (run.scratch / "profile-output").read_bytes() == source.read_bytes()
-    profile_text = io.StringIO()
-    pstats.Stats(str(run.evidence / "client-read.prof"), stream=profile_text).sort_stats("cumulative").print_stats(40)
-    (run.evidence / "client-read-profile.txt").write_text(profile_text.getvalue(), encoding="utf-8")
+    diagnostics = diagnostic_artifacts(sizes)
+    for diagnostic in diagnostics:
+        size = diagnostic["size"]
+        source = run.scratch / f"input-{size}"
+        output = run.scratch / diagnostic["output"]
+        profile = run.evidence / diagnostic["profile"]
+        args = [sys.executable, "-m", "cProfile", "-o", str(profile), str(ROOT / "scripts/bfr.py"), "--state", str(writer), "--servers", *run.urls(), "read", f"sample-{size}", str(output), "--owner", owner]
+        result = command(args, run.evidence / diagnostic["profile_receipt"])
+        assert result["returncode"] == 0
+        assert output.read_bytes() == source.read_bytes()
+        profile_text = io.StringIO()
+        pstats.Stats(str(profile), stream=profile_text).sort_stats("cumulative").print_stats(40)
+        (run.evidence / diagnostic["profile_text"]).write_text(profile_text.getvalue(), encoding="utf-8")
+        cases.append({"kind": "profile", "profile_kind": diagnostic["profile_kind"], "size": size,
+                      "correct": True, **result})
     if not smoke:
-        started = time.perf_counter()
-        stable = []
-        while time.perf_counter() - started < 60:
-            output = run.scratch / "stable-output"
-            sample = command([sys.executable, str(ROOT / "scripts/bfr.py"), "--state", str(writer), "--servers", *run.urls(), "read", f"sample-{sizes[0]}", str(output), "--owner", owner], run.evidence / "stability.usage")
-            sample["correct"] = sample["returncode"] == 0 and output.read_bytes() == source.read_bytes()
-            stable.append(sample)
-            assert sample["correct"]
-        cases.append({"kind": "stability", "policy": "closed-loop one outstanding CLI; saturation sweep above uses scheduled arrivals", "duration_seconds": time.perf_counter() - started, "offered": len(stable), "completed": len(stable), "errors": 0, "samples": stable})
+        for diagnostic in diagnostics:
+            size = diagnostic["size"]
+            source = run.scratch / f"input-{size}"
+            started = time.perf_counter()
+            stable = []
+            while time.perf_counter() - started < 60:
+                output = run.scratch / diagnostic["stability_output"]
+                sample = command([sys.executable, str(ROOT / "scripts/bfr.py"), "--state", str(writer), "--servers", *run.urls(), "read", f"sample-{size}", str(output), "--owner", owner], run.evidence / diagnostic["stability_receipt"])
+                sample["correct"] = sample["returncode"] == 0 and output.read_bytes() == source.read_bytes()
+                stable.append(sample)
+                assert sample["correct"]
+            cases.append({"kind": "stability", "size": size, "policy": "closed-loop one outstanding CLI; saturation sweep above uses scheduled arrivals", "duration_seconds": time.perf_counter() - started, "offered": len(stable), "completed": len(stable), "errors": 0, "samples": stable})
     _atomic_json(run.evidence / "samples.json", cases)
     comparisons = []
     for size in sizes:

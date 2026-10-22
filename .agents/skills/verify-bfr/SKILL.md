@@ -5,7 +5,7 @@ description: Drive the BFR storage CLI and four loopback server processes; use t
 
 # Verify the BFR storage experiment
 
-For the maintained benchmark path and its frozen workload, follow [features/metrics.md](features/metrics.md). The manual `metrics.yml` workflow runs it on an isolated Ubuntu runner.
+For the maintained benchmark path and its frozen workload, follow [features/metrics.md](features/metrics.md). The manual `metrics.yml` workflow runs it on an isolated Ubuntu runner. Current accepted metrics cover the 4 KiB profile and stability stage; the added 128 KiB and 1 MiB diagnostic stages remain draft coverage until a hosted run completes.
 
 The verifier launches only its own four loopback server processes and uses a fresh per-run state directory. Never point a run at a real Tahoe node or user data.
 

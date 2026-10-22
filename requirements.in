@@ -1,0 +1,29 @@
+# Direct Tahoe-LAFS runtime dependencies resolved for Python 3.11, plus the
+# sole additional dependency needed by its existing codec test suite.
+attrs==26.1.0
+autobahn==26.10.2
+cbor2==6.1.5
+click==8.5.0
+collections-extended==2.0.2
+cryptography==50.0.2
+distro==1.9.0
+eliot==1.18.0
+filelock==4.2.4
+foolscap==24.9.0
+hypothesis==6.170.5
+klein==24.8.0
+magic-wormhole==0.24.0
+netifaces==0.11.0
+psutil==7.2.2
+pycddl==0.6.4
+pyOpenSSL==26.4.0
+pyrsistent==0.20.0
+pyutil==3.4.1
+pywin32==312; sys_platform == "win32"
+PyYAML==6.0.3
+six==1.17.0
+treq==26.7.0
+Twisted[tls,conch]==26.4.0
+Werkzeug==3.1.9
+zfec==1.6.0.0
+zope.interface==8.7

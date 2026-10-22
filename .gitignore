@@ -55,3 +55,7 @@ zope.interface-*.egg
 secret-env-plain
 
 .ruff_cache
+/.agents/runs/
+/.audit/
+/.codex/tools/
+/.verification-smoke/

@@ -1,0 +1,9 @@
+"""Bounded Byzantine erasure-storage experiment built alongside Tahoe-LAFS."""
+
+PROTOCOL_VERSION = 1
+SERVER_COUNT = 4
+BYZANTINE_BOUND = 1
+ERASURE_THRESHOLD = 2
+WRITE_ACKS = 3
+METADATA_RESPONSES = 3
+METADATA_VOTES = 2

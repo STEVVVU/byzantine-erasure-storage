@@ -1,0 +1,59 @@
+name: BFR storage verification
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+      - name: Install hash-locked Tahoe runtime and codec test dependencies
+        run: python -m pip install --require-hashes --disable-pip-version-check -r requirements.lock
+      - name: Run Tahoe version command
+        env:
+          PYTHONPATH: src
+        run: python -m allmydata --version
+      - name: Run Tahoe erasure-codec tests
+        env:
+          PYTHONPATH: src
+        run: python -m twisted.trial allmydata.test.test_codec
+      - name: Run protocol invariant tests
+        run: python -m unittest discover -s coursework/bfr_tests -v
+      - name: Drive the four-server fault and recovery journey
+        env:
+          PYTHONPATH: src
+          BFR_RUN_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
+        run: python scripts/verify.py all --run-id "$BFR_RUN_ID"
+      - name: Assert successful journey terminal verdict and cleanup
+        env:
+          BFR_RUN_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
+        run: python -c 'import json, os; p=".agents/runs/" + os.environ["BFR_RUN_ID"] + "/evidence/evidence.json"; d=json.load(open(p, encoding="utf-8")); v=d["verdict"]; c=v["cleanup"]; assert v["passed"] is True; assert v["failure"] is None; assert c["passed"] is True; assert c["owned_processes_alive"] == []; assert c["scratch_removed"] is True; assert c["evidence_retained"] is True'
+      - name: Verify failed verdict and cleanup after injected post-launch failure
+        env:
+          BFR_NEGATIVE_RUN_ID: ci-negative-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          if python scripts/verify.py all --run-id "$BFR_NEGATIVE_RUN_ID" --inject-failure-after-launch; then
+            echo "negative control unexpectedly passed"
+            exit 1
+          fi
+          python -c 'import json, os; p=".agents/runs/" + os.environ["BFR_NEGATIVE_RUN_ID"] + "/evidence/evidence.json"; d=json.load(open(p, encoding="utf-8")); v=d["verdict"]; c=v["cleanup"]; assert v["passed"] is False; assert v["failure"]["message"] == "injected failure after launch"; assert c["passed"] is True; assert c["owned_processes_alive"] == []; assert c["scratch_removed"] is True; assert c["evidence_retained"] is True'
+      - name: Preserve process logs and journey evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bfr-verification-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .agents/runs/ci-${{ github.run_id }}-${{ github.run_attempt }}/evidence/
+            .agents/runs/ci-negative-${{ github.run_id }}-${{ github.run_attempt }}/evidence/
+          if-no-files-found: warn

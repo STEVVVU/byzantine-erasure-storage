@@ -1,4 +1,5 @@
 name: BFR storage verification
+run-name: Verify signed storage and owned-process cleanup
 
 on:
   push:

@@ -311,17 +311,21 @@ def validate_share_response(response: dict, signed: dict, share_id: int, pub: by
     return _manifest_share(signed["body"], pub, share_id, stripe_index, blocks[stripe_index])
 
 
-def _collect_shares(urls: list[str], history: list[dict], pub: bytes, stripe_index: int) -> tuple[list[bytes], list[int]]:
+def _collect_shares(urls: list[str], history: list[dict], pub: bytes, stripe_index: int, responses: dict[int, dict]) -> tuple[list[bytes], list[int]]:
     signed = history[-1]
     body = signed["body"]
     version = body["version"]
     shares: dict[int, bytes] = {}
     for expected_id, url in enumerate(urls):
         try:
-            response = _request(url, "/v1/block?" + urllib.parse.urlencode({
-                "owner": body["owner"], "file": body["file"], "version": str(version),
-            }))
+            # A response rejected for this stripe must not stay cached for later stripes.
+            response = responses.pop(expected_id, None)
+            if response is None:
+                response = _request(url, "/v1/block?" + urllib.parse.urlencode({
+                    "owner": body["owner"], "file": body["file"], "version": str(version),
+                }))
             shares[expected_id] = validate_share_response(response, signed, expected_id, pub, stripe_index)
+            responses[expected_id] = response
         except (OSError, ValueError, InvalidRecord, KeyError, TypeError, StopIteration, urllib.error.URLError, TimeoutError):
             continue
         except Exception:
@@ -490,8 +494,9 @@ def read(urls: list[str], state: Path, file_id: str, owner: str | None = None) -
     if body["action"] == "delete":
         raise FileNotFoundError(file_id)
     all_shares = []
+    responses: dict[int, dict] = {}
     for stripe_index in range(len(body["stripes"])):
-        all_shares.append(_collect_shares(urls, history, pub, stripe_index))
+        all_shares.append(_collect_shares(urls, history, pub, stripe_index, responses))
     data = run_codec(_decode_stripes(body, all_shares))
     return data, {"owner": owner, "file": file_id, "version": body["version"], "sha256": hashlib.sha256(data).hexdigest()}
 

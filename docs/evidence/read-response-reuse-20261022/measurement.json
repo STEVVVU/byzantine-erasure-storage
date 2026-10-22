@@ -1,0 +1,385 @@
+{
+  "baseline_source_sha": "e1ce5826e82810f4154d0d7ced6906bb570ba963",
+  "baseline_run": "https://github.com/STEVVVU/byzantine-erasure-storage/actions/runs/39747376867",
+  "baseline_raw_sha256": {
+    "summary.json": "d11e72e129efe6e153b9f85ae8b9bae9e2a5a15fd22e21b347238c9b7863edaa",
+    "evidence.json": "62bbd3b38e53c9b2d06a3e1c6e7372bed9009dcced2042ab21edd01f66dd4ead",
+    "client-read-1048576.prof": "efc82d8fffbcdf094609fff666b674f4ab05b1f19b97a0c37bc20eba7d53186a",
+    "samples.json": "ba63a977a42b400319f14b7361bc473139d17c1231f4937ca8e48e56989ee8b8",
+    "environment.json": "deeac968b3eb3a54b4e51523e4f1346b33cc458f90d0355161e9edb405b21a63"
+  },
+  "baseline_environment": {
+    "baseline_scope": "trusted local disk same Tahoe n4/k2 codec reads, no HTTP/signature/quorum; not an equivalent security system",
+    "cache": "warm server data and OS cache; fresh CLI per request",
+    "command": [
+      "scripts/benchmark.py",
+      "--run-id",
+      "metrics-39747376867-1"
+    ],
+    "cpu": "x86_64",
+    "cpu_count": 4,
+    "load_average": [
+      1.568359375,
+      0.6025390625,
+      0.220703125
+    ],
+    "memory_bytes": 16759304192,
+    "packages": [
+      "appdirs==1.4.4",
+      "attrs==26.1.0",
+      "autobahn==26.10.2",
+      "Automat==25.4.16",
+      "bcrypt==5.0.0",
+      "boltons==26.2.0",
+      "cbor2==6.1.5",
+      "cffi==2.1.1",
+      "click==8.5.0",
+      "collections-extended==2.0.2",
+      "colorama==0.4.6",
+      "constantly==23.10.4",
+      "cryptography==50.0.2",
+      "distro==1.9.0",
+      "eliot==1.18.0",
+      "filelock==4.2.4",
+      "foolscap==24.9.0",
+      "humanize==4.16.0",
+      "hyperlink==21.0.0",
+      "hypothesis==6.170.5",
+      "idna==3.20",
+      "Incremental==24.11.0",
+      "iterable-io==1.0.4",
+      "klein==24.8.0",
+      "magic-wormhole==0.24.0",
+      "MarkupSafe==3.0.4",
+      "msgpack==1.2.3",
+      "multipart==2.0.1",
+      "netifaces==0.11.0",
+      "orjson==3.13.0",
+      "packaging==26.3",
+      "psutil==7.2.2",
+      "pycddl==0.6.4",
+      "pycparser==3.11",
+      "PyNaCl==1.6.2",
+      "pyOpenSSL==26.4.0",
+      "pyrsistent==0.20.0",
+      "pyutil==3.4.1",
+      "PyYAML==6.0.3",
+      "qrcode==8.2",
+      "service-identity==26.1.0",
+      "simplejson==4.2.0",
+      "six==1.17.0",
+      "sortedcontainers==2.4.0",
+      "spake2==0.9",
+      "tqdm==4.70.1",
+      "treq==26.7.0",
+      "Tubes==0.2.1",
+      "Twisted==26.4.0",
+      "txaio==26.6.1",
+      "txtorcon==26.6.0",
+      "typing_extensions==4.16.0",
+      "ujson==6.0.0",
+      "Werkzeug==3.1.9",
+      "zfec==1.6.0.0",
+      "zipstream-ng==1.9.3",
+      "zope.interface==8.7"
+    ],
+    "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+    "python": "3.11.17 (main, Oct  1 2026, 14:32:31) [GCC 13.3.0]",
+    "repeats": 5,
+    "seed": 1729,
+    "source_sha": "e1ce5826e82810f4154d0d7ced6906bb570ba963"
+  },
+  "baseline_counts": {
+    "expected_quorum_rejected": 7800,
+    "errors": 0,
+    "batches": 180,
+    "timeouts": 0,
+    "completed": 23400,
+    "offered": 31200
+  },
+  "baseline_comparisons": [
+    {
+      "concurrency": 1,
+      "median_bytes_per_second": 14230.00880027641,
+      "range_bytes_per_second": [
+        14061.66582763033,
+        14481.0362432472
+      ],
+      "runs": 5,
+      "side": "trusted_codec",
+      "size": 4096
+    },
+    {
+      "concurrency": 1,
+      "median_bytes_per_second": 13942.681281705725,
+      "range_bytes_per_second": [
+        13671.330200634968,
+        14097.535129970565
+      ],
+      "runs": 5,
+      "side": "bfr",
+      "size": 4096
+    },
+    {
+      "concurrency": 4,
+      "median_bytes_per_second": 37474.28251597224,
+      "range_bytes_per_second": [
+        36926.63367884618,
+        37916.617133109954
+      ],
+      "runs": 5,
+      "side": "trusted_codec",
+      "size": 4096
+    },
+    {
+      "concurrency": 4,
+      "median_bytes_per_second": 36364.93412834488,
+      "range_bytes_per_second": [
+        35925.14949013237,
+        37113.95821098658
+      ],
+      "runs": 5,
+      "side": "bfr",
+      "size": 4096
+    },
+    {
+      "concurrency": 8,
+      "median_bytes_per_second": 34513.54656927981,
+      "range_bytes_per_second": [
+        34228.76332693938,
+        34671.65561063823
+      ],
+      "runs": 5,
+      "side": "trusted_codec",
+      "size": 4096
+    },
+    {
+      "concurrency": 8,
+      "median_bytes_per_second": 34383.65093873827,
+      "range_bytes_per_second": [
+        33184.4145630946,
+        34673.146695372074
+      ],
+      "runs": 5,
+      "side": "bfr",
+      "size": 4096
+    },
+    {
+      "concurrency": 1,
+      "median_bytes_per_second": 454397.1016409568,
+      "range_bytes_per_second": [
+        450069.6445407055,
+        458166.8357317345
+      ],
+      "runs": 5,
+      "side": "trusted_codec",
+      "size": 131072
+    },
+    {
+      "concurrency": 1,
+      "median_bytes_per_second": 438723.851463426,
+      "range_bytes_per_second": [
+        434402.10057688964,
+        442456.5579303303
+      ],
+      "runs": 5,
+      "side": "bfr",
+      "size": 131072
+    },
+    {
+      "concurrency": 4,
+      "median_bytes_per_second": 1203620.3736586347,
+      "range_bytes_per_second": [
+        1196787.4166473704,
+        1222339.2703040603
+      ],
+      "runs": 5,
+      "side": "trusted_codec",
+      "size": 131072
+    },
+    {
+      "concurrency": 4,
+      "median_bytes_per_second": 1151811.9329785388,
+      "range_bytes_per_second": [
+        1146507.4702719909,
+        1170439.5038316203
+      ],
+      "runs": 5,
+      "side": "bfr",
+      "size": 131072
+    },
+    {
+      "concurrency": 8,
+      "median_bytes_per_second": 1143432.7612239867,
+      "range_bytes_per_second": [
+        1126012.8860285946,
+        1161331.926464786
+      ],
+      "runs": 5,
+      "side": "trusted_codec",
+      "size": 131072
+    },
+    {
+      "concurrency": 8,
+      "median_bytes_per_second": 1122571.9033230075,
+      "range_bytes_per_second": [
+        1098349.4367405858,
+        1125685.1241117495
+      ],
+      "runs": 5,
+      "side": "bfr",
+      "size": 131072
+    },
+    {
+      "concurrency": 1,
+      "median_bytes_per_second": 3623614.0531155807,
+      "range_bytes_per_second": [
+        3579430.353097743,
+        3673782.097858763
+      ],
+      "runs": 5,
+      "side": "trusted_codec",
+      "size": 1048576
+    },
+    {
+      "concurrency": 1,
+      "median_bytes_per_second": 2092392.7728134422,
+      "range_bytes_per_second": [
+        2042695.8792270815,
+        2098357.0191837572
+      ],
+      "runs": 5,
+      "side": "bfr",
+      "size": 1048576
+    },
+    {
+      "concurrency": 4,
+      "median_bytes_per_second": 9519608.749968823,
+      "range_bytes_per_second": [
+        9493897.32579512,
+        9578140.165342929
+      ],
+      "runs": 5,
+      "side": "trusted_codec",
+      "size": 1048576
+    },
+    {
+      "concurrency": 4,
+      "median_bytes_per_second": 5322880.381396225,
+      "range_bytes_per_second": [
+        5265234.175292346,
+        5361008.381940685
+      ],
+      "runs": 5,
+      "side": "bfr",
+      "size": 1048576
+    },
+    {
+      "concurrency": 8,
+      "median_bytes_per_second": 9016876.526098493,
+      "range_bytes_per_second": [
+        8951871.472623816,
+        9233675.504835632
+      ],
+      "runs": 5,
+      "side": "trusted_codec",
+      "size": 1048576
+    },
+    {
+      "concurrency": 8,
+      "median_bytes_per_second": 5278835.6080169715,
+      "range_bytes_per_second": [
+        5251065.771564207,
+        5310608.8885470955
+      ],
+      "runs": 5,
+      "side": "bfr",
+      "size": 1048576
+    }
+  ],
+  "baseline_profiles": [
+    {
+      "size": 4096,
+      "correct": true,
+      "seconds": 0.510982189999595,
+      "returncode": 0,
+      "timed_out": false,
+      "rss_kib": 63444,
+      "cpu_seconds": 0.44999999999999996
+    },
+    {
+      "size": 131072,
+      "correct": true,
+      "seconds": 0.46217311100008374,
+      "returncode": 0,
+      "timed_out": false,
+      "rss_kib": 63460,
+      "cpu_seconds": 0.43999999999999995
+    },
+    {
+      "size": 1048576,
+      "correct": true,
+      "seconds": 0.6760379629995441,
+      "returncode": 0,
+      "timed_out": false,
+      "rss_kib": 64220,
+      "cpu_seconds": 0.53
+    }
+  ],
+  "baseline_stability": [
+    {
+      "size": 4096,
+      "policy": "closed-loop one outstanding CLI; saturation sweep above uses scheduled arrivals",
+      "duration_seconds": 60.11348692399952,
+      "offered": 207,
+      "completed": 207,
+      "errors": 0
+    },
+    {
+      "size": 131072,
+      "policy": "closed-loop one outstanding CLI; saturation sweep above uses scheduled arrivals",
+      "duration_seconds": 60.1725954450003,
+      "offered": 203,
+      "completed": 203,
+      "errors": 0
+    },
+    {
+      "size": 1048576,
+      "policy": "closed-loop one outstanding CLI; saturation sweep above uses scheduled arrivals",
+      "duration_seconds": 60.24856679699951,
+      "offered": 119,
+      "completed": 119,
+      "errors": 0
+    }
+  ],
+  "candidate_request_proof": {
+    "bytes": 1048576,
+    "network_and_codec_stubbed": false,
+    "requests": {
+      "blocks": 4,
+      "metadata": 4,
+      "total": 8
+    },
+    "sha256": "92ac717cd44b057c03021776e85fa84e5ddd709a805e14f462186db213798c63"
+  },
+  "candidate_proof_cleanup": {
+    "errors": [],
+    "evidence_retained": true,
+    "owned_processes_alive": [],
+    "passed": true,
+    "scratch_removed": true
+  },
+  "candidate_tested_working_source_sha256": {
+    "driver": "b497be265d22db5d8be1afdb1c79236ab01ce9c57fd35d019199d7502d21d8c7",
+    "client": "b4f47c249b30590925f539288d05c28b150d17f6e3d8881ef21d88ed96d9fc9b"
+  },
+  "candidate_raw_proof_sha256": "2a96500d089d1e4b494bb02818a72771d87854f4b12b71f8707c32a04b38d3f5",
+  "claim_limits": [
+    "No matched candidate/baseline throughput result yet.",
+    "Fresh CLI import startup remains; HTTP call reduction is not a proportional whole-command speedup.",
+    "Trusted codec omits HTTP/signatures/quorum and is not security-equivalent.",
+    "Existing fault model and signed/checkpoint checks retained. Cached corrupt later-stripe responses do not guarantee immediate visibility of a concurrent repair.",
+    "No 92 MB/s, 110 independent fault tests or 310 ms repair claim is established."
+  ],
+  "candidate_proof_run_id": "response-reuse-1m-final-20261022-101505"
+}

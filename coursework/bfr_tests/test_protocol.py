@@ -44,6 +44,48 @@ def signed_file(key: Ed25519PrivateKey, version: int = 1, parent: str | None = N
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_read_reuses_full_responses_but_checks_each_stripe(self):
+        key = Ed25519PrivateKey.generate()
+        body = copy.deepcopy(signed_file(key)["body"])
+        body["size"] = 10
+        second = copy.deepcopy(body["stripes"][0])
+        for descriptor in second["blocks"]:
+            descriptor["signature"] = b64(key.sign(block_message(
+                body["owner"], "sample", 1, 1, descriptor["share_id"], descriptor["sha256"],
+            )))
+        body["stripes"].append(second)
+        signed = sign_update(body, key)
+        responses = [{"update": signed, "share_id": i, "blocks": [b64(b"block"), b64(b"block")]} for i in range(4)]
+        requests = []
+
+        def request(url, path):
+            requests.append(path)
+            return {"history": [signed]} if path.startswith("/v1/meta?") else responses[int(url)]
+
+        def decoded(awaitable):
+            awaitable.close()
+            return b"blockblock"
+
+        with tempfile.TemporaryDirectory() as directory:
+            state = Path(directory)
+            trusted = state / "trusted" / (body["owner"] + ".pub")
+            trusted.parent.mkdir(parents=True)
+            trusted.write_text(public_bytes(key).hex(), encoding="ascii")
+            with mock.patch("bfr.client._request", side_effect=request), mock.patch("bfr.client.run_codec", side_effect=decoded) as decode, mock.patch("bfr.client.validate_share_response", wraps=validate_share_response) as validate:
+                for reads in (1, 2):
+                    data, result = read(["0", "1", "2", "3"], state, "sample", body["owner"])
+                    self.assertEqual(data, b"blockblock")
+                    self.assertEqual(result["version"], 1)
+                    self.assertEqual(sum(path.startswith("/v1/block?") for path in requests), 4 * reads)
+                    self.assertEqual(sum(path.startswith("/v1/meta?") for path in requests), 4 * reads)
+                    self.assertEqual(validate.call_count, 8 * reads)
+                for response in responses[:3]:
+                    response["blocks"][1] = b64(b"tampered")
+                with self.assertRaisesRegex(QuorumError, "stripe 1 needs 2"):
+                    read(["0", "1", "2", "3"], state, "sample", body["owner"])
+                self.assertEqual(decode.call_count, 2)
+                self.assertEqual(validate.call_count, 24)
+
     def test_checkpoint_updates_do_not_rollback_under_concurrent_writers(self):
         key = Ed25519PrivateKey.generate()
         first = signed_file(key)

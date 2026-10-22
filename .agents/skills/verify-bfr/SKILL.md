@@ -5,7 +5,7 @@ description: Drive the BFR storage CLI and four loopback server processes; use t
 
 # Verify the BFR storage experiment
 
-For the maintained benchmark path and its frozen workload, follow [features/metrics.md](features/metrics.md). The manual `metrics.yml` workflow runs it on an isolated Ubuntu runner. Current accepted metrics cover the 4 KiB profile and stability stage; the added 128 KiB and 1 MiB diagnostic stages remain draft coverage until a hosted run completes.
+For the maintained benchmark path and its frozen workload, follow [features/metrics.md](features/metrics.md). The manual `metrics.yml` workflow runs it on an isolated Ubuntu runner. Expanded baseline run 39747376867 completed the exact-read profiles and closed-loop stability at all three frozen sizes. Candidate timing remains separate from this baseline.
 
 The verifier launches only its own four loopback server processes and uses a fresh per-run state directory. Never point a run at a real Tahoe node or user data.
 
@@ -30,6 +30,8 @@ Run `python scripts/verify.py evidence --run-id <unique-id>`. Preserve `evidence
 Run `python scripts/verify.py cleanup --run-id <unique-id>`. It terminates only PIDs recorded by Launch, waits for those PIDs to exit, and removes only that run's server roots and scratch state. It preserves the evidence directory. After cleanup, check that `evidence.json` remains and every recorded process has exited.
 
 ## Helpers
+
+`python scripts/verify_read_requests.py --run-id <unique-id>` reuses Launch, Doctor, real HTTP/codec read, retained evidence and owned Cleanup to prove exact 1 MiB reconstruction with four metadata and four block requests. It never stubs network or codec behavior. Read `read_request_proof` and `cleanup` in that run's `evidence/evidence.json`. This path passed locally at `response-reuse-1m-final-20261022-101505`; the full normal/fault path passed at `response-reuse-proof-20261022-100613`. Both preserved evidence and released all owned servers. Neither is a throughput measurement.
 
 `python scripts/verify.py --help` lists supported phases and options. The same driver is used by local verification and Linux CI. A full run is `python scripts/verify.py all --run-id <unique-id>`.
 

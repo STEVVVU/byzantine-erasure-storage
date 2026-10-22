@@ -42,6 +42,10 @@ jobs:
         env:
           BFR_RUN_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
         run: python -c 'import json, os; p=".agents/runs/" + os.environ["BFR_RUN_ID"] + "/evidence/evidence.json"; d=json.load(open(p, encoding="utf-8")); v=d["verdict"]; c=v["cleanup"]; assert v["passed"] is True; assert v["failure"] is None; assert c["passed"] is True; assert c["owned_processes_alive"] == []; assert c["scratch_removed"] is True; assert c["evidence_retained"] is True'
+      - name: Verify exact 1 MiB read and bounded share requests
+        env:
+          PYTHONPATH: src
+        run: python scripts/verify_read_requests.py --run-id ci-read-requests-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Verify failed verdict and cleanup after injected post-launch failure
         env:
           BFR_NEGATIVE_RUN_ID: ci-negative-${{ github.run_id }}-${{ github.run_attempt }}
@@ -60,4 +64,5 @@ jobs:
           path: |
             .agents/runs/ci-${{ github.run_id }}-${{ github.run_attempt }}/evidence/
             .agents/runs/ci-negative-${{ github.run_id }}-${{ github.run_attempt }}/evidence/
+            .agents/runs/ci-read-requests-${{ github.run_id }}-${{ github.run_attempt }}/evidence/
           if-no-files-found: warn

@@ -30,6 +30,8 @@ jobs:
           PYTHONPATH: src
         run: python -m twisted.trial allmydata.test.test_codec
       - name: Run protocol invariant tests
+        env:
+          PYTHONPATH: src
         run: python -m unittest discover -s coursework/bfr_tests -v
       - name: Drive the four-server fault and recovery journey
         env:

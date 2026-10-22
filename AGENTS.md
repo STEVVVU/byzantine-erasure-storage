@@ -8,7 +8,7 @@ The BFR codec adapter uses Tahoe's CRSEncoder and CRSDecoder. The client perform
 
 ## Environment and checks
 
-Use an isolated Python 3.11 environment, install the hash-locked runtime with `python -m pip install --require-hashes -r requirements.lock`, and set `PYTHONPATH=src` when invoking Tahoe modules. The Tahoe smoke checks are `python -m allmydata --version` and `python -m twisted.trial allmydata.test.test_codec`. The deterministic protocol tests are `python -m unittest discover -s coursework/bfr_tests -v`.
+Use an isolated Python 3.11 environment, install the hash-locked runtime with `python -m pip install --require-hashes -r requirements.lock`, and set `PYTHONPATH=src` when invoking Tahoe modules or the protocol tests. The Tahoe smoke checks are `python -m allmydata --version` and `python -m twisted.trial allmydata.test.test_codec`. The deterministic protocol tests are `python -m unittest discover -s coursework/bfr_tests -v`.
 
 For real-product process verification, follow `.agents/skills/verify-bfr/SKILL.md`. The stable driver is `scripts/verify.py`; run `python scripts/verify.py all --run-id <unique-id>` from the repository root. It owns only loopback processes and its run-specific state. It records a terminal pass/fail verdict and preserves evidence after cleanup under `.agents/runs/<unique-id>/evidence/`. CI also runs its post-launch failure injection with a separate run ID to prove failure verdict and process cleanup.
 

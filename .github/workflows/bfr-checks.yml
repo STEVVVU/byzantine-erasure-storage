@@ -54,6 +54,7 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: bfr-verification-${{ github.run_id }}-${{ github.run_attempt }}
+          include-hidden-files: true
           path: |
             .agents/runs/ci-${{ github.run_id }}-${{ github.run_attempt }}/evidence/
             .agents/runs/ci-negative-${{ github.run_id }}-${{ github.run_attempt }}/evidence/

@@ -1,0 +1,1090 @@
+{
+  "run": 39762459698,
+  "url": "https://github.com/STEVVVU/byzantine-erasure-storage/actions/runs/39762459698",
+  "comparison_sha256": "05766c6c0736f31b30e95903ba19d0c3dfbba3179b8441147152d6c50717c588",
+  "baseline": "e1ce5826e82810f4154d0d7ced6906bb570ba963",
+  "candidate": "0bcc0fddaf16ae3839426e52a110ff34d38776e2",
+  "passed": true,
+  "checked_timed_outputs": 30,
+  "checked_warmups": 6,
+  "environment": {
+    "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+    "python": "3.11.17 (main, Oct  1 2026, 14:32:31) [GCC 13.3.0]",
+    "cpu_count": 4,
+    "memory_bytes": 16765378560,
+    "load_average": [
+      0.95751953125,
+      0.396484375,
+      0.14599609375
+    ],
+    "hyperfine_version": "hyperfine 2.0.0"
+  },
+  "source_hashes": {
+    "baseline_commit": "e1ce5826e82810f4154d0d7ced6906bb570ba963",
+    "candidate_commit": "0bcc0fddaf16ae3839426e52a110ff34d38776e2",
+    "requirements_lock_sha256": "9c6177a8deca9a9adeafcd18000613c160712437df1df958ca30ceb1507a987a",
+    "shared_implementation": {
+      "bfr/__init__.py": "29df38d2c9b11fc8a25e570bcb20f62c20c68316e797feff8803d0f873fa21a8",
+      "bfr/codec.py": "bb53d1448351ab5828e6be07273285d071b212f97d055df6df83e537ab96a522",
+      "bfr/model.py": "b11a1ea8efc300e64bc8986a5bee8074c7756e0baf9d7f71de5a5ac78a3891b2",
+      "bfr/server.py": "757c54f5d2abb222060aa5babf3b2871cc1187f8ff00661d941dcd421e347b81",
+      "pyproject.toml": "fd9bb0147a4c0f1ff8a4deca657e27727e2f3a8c36ba34fbe8c7da34025610ea",
+      "requirements.lock": "9c6177a8deca9a9adeafcd18000613c160712437df1df958ca30ceb1507a987a",
+      "scripts/bfr.py": "00e131422a42392405fc46932438123e35461bb4233af0a82607d4aaaf62e29d",
+      "src/allmydata/codec.py": "d1840ae5f3ab2501a404d03ba49220b5b55303974d19815a7880a7cbc3ca850b"
+    }
+  },
+  "cleanup": {
+    "errors": [],
+    "evidence_retained": true,
+    "owned_processes_alive": [],
+    "passed": true,
+    "scratch_removed": true
+  },
+  "summary": [
+    {
+      "size_bytes": 4096,
+      "baseline": {
+        "runs": 5,
+        "median_seconds": 0.283878552,
+        "range_seconds": [
+          0.28260124400000003,
+          0.285952497
+        ],
+        "median_cpu_seconds": 0.277149,
+        "median_peak_rss_bytes": 53587968.0
+      },
+      "candidate": {
+        "runs": 5,
+        "median_seconds": 0.285185844,
+        "range_seconds": [
+          0.283267145,
+          0.28579117800000003
+        ],
+        "median_cpu_seconds": 0.278769,
+        "median_peak_rss_bytes": 53633024.0
+      },
+      "wall_reduction_percent": -0.46051101458344235,
+      "baseline_over_candidate": 0.9954159996805451
+    },
+    {
+      "size_bytes": 131072,
+      "baseline": {
+        "runs": 5,
+        "median_seconds": 0.288633745,
+        "range_seconds": [
+          0.284748586,
+          0.29288885200000003
+        ],
+        "median_cpu_seconds": 0.28048799999999996,
+        "median_peak_rss_bytes": 54276096.0
+      },
+      "candidate": {
+        "runs": 5,
+        "median_seconds": 0.29116099700000003,
+        "range_seconds": [
+          0.287343532,
+          0.29446394400000003
+        ],
+        "median_cpu_seconds": 0.28224,
+        "median_peak_rss_bytes": 54456320.0
+      },
+      "wall_reduction_percent": -0.8755913138292382,
+      "baseline_over_candidate": 0.9913200874222861
+    },
+    {
+      "size_bytes": 1048576,
+      "baseline": {
+        "runs": 5,
+        "median_seconds": 0.485252045,
+        "range_seconds": [
+          0.48212954,
+          0.492687607
+        ],
+        "median_cpu_seconds": 0.359884,
+        "median_peak_rss_bytes": 57458688.0
+      },
+      "candidate": {
+        "runs": 5,
+        "median_seconds": 0.33623731100000004,
+        "range_seconds": [
+          0.334183932,
+          0.341238823
+        ],
+        "median_cpu_seconds": 0.315597,
+        "median_peak_rss_bytes": 59801600.0
+      },
+      "wall_reduction_percent": 30.7087286978873,
+      "baseline_over_candidate": 1.4431832194851213
+    }
+  ],
+  "measurements": [
+    {
+      "size_bytes": 4096,
+      "repeat": 0,
+      "arm": "baseline",
+      "sha256": "b7334dd1ec16d37dea26d574d23f09da6a898c9786b79d13fcf67a8133f76d2a",
+      "wall_seconds": 0.285952497,
+      "hyperfine_json_sha256": "3b244da2a66d1230a849f592ca5c6cdd4bdb6e220a0ddb164d7ed43f7fac3ec9",
+      "native_file": "hyperfine-4096-0-baseline.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.285952497,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.279319,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.244279,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.03504,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 53587968.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 4096,
+      "repeat": 0,
+      "arm": "candidate",
+      "sha256": "b7334dd1ec16d37dea26d574d23f09da6a898c9786b79d13fcf67a8133f76d2a",
+      "wall_seconds": 0.283267145,
+      "hyperfine_json_sha256": "93b07a4f03df7fd80cc572820193d3994d8db28402190d44f0f963911d1ba983",
+      "native_file": "hyperfine-4096-0-candidate.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.283267145,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.27653,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.24736899999999998,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.029161,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 53661696.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 4096,
+      "repeat": 1,
+      "arm": "candidate",
+      "sha256": "b7334dd1ec16d37dea26d574d23f09da6a898c9786b79d13fcf67a8133f76d2a",
+      "wall_seconds": 0.28579117800000003,
+      "hyperfine_json_sha256": "3ca1fc46b1bae29c4a4e080be0dd904d63b62de4e663ce4a6243c44db7ccce58",
+      "native_file": "hyperfine-4096-1-candidate.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.28579117800000003,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.279093,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.25793499999999997,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.021158,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 53432320.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 4096,
+      "repeat": 1,
+      "arm": "baseline",
+      "sha256": "b7334dd1ec16d37dea26d574d23f09da6a898c9786b79d13fcf67a8133f76d2a",
+      "wall_seconds": 0.28260124400000003,
+      "hyperfine_json_sha256": "ef901ceafbbe42e0c2896e69a61a67723dfc90f7d0835f652ce67fbdc99c0de1",
+      "native_file": "hyperfine-4096-1-baseline.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.28260124400000003,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.27613499999999996,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.254972,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.021162999999999998,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 53583872.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 4096,
+      "repeat": 2,
+      "arm": "baseline",
+      "sha256": "b7334dd1ec16d37dea26d574d23f09da6a898c9786b79d13fcf67a8133f76d2a",
+      "wall_seconds": 0.284778494,
+      "hyperfine_json_sha256": "cfbeb6167b933c053aefa1937ee59b71f7b192084207afec5ed60bdeed8f177d",
+      "native_file": "hyperfine-4096-2-baseline.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.284778494,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.277964,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.249765,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.028199,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 53612544.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 4096,
+      "repeat": 2,
+      "arm": "candidate",
+      "sha256": "b7334dd1ec16d37dea26d574d23f09da6a898c9786b79d13fcf67a8133f76d2a",
+      "wall_seconds": 0.28564304100000004,
+      "hyperfine_json_sha256": "e741afbba44edc1747e1dac345ff6d0de9393c447f9d2131f7ba18a7972c6468",
+      "native_file": "hyperfine-4096-2-candidate.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.28564304100000004,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.279074,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.24306499999999998,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.036009,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 53633024.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 4096,
+      "repeat": 3,
+      "arm": "candidate",
+      "sha256": "b7334dd1ec16d37dea26d574d23f09da6a898c9786b79d13fcf67a8133f76d2a",
+      "wall_seconds": 0.285185844,
+      "hyperfine_json_sha256": "c5110b20717ef1d0afcdeffb636b6717bc867e76a7d74d9e991e95d0992aa79c",
+      "native_file": "hyperfine-4096-3-candidate.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.285185844,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.278769,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.24354599999999998,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.035223,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 53444608.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 4096,
+      "repeat": 3,
+      "arm": "baseline",
+      "sha256": "b7334dd1ec16d37dea26d574d23f09da6a898c9786b79d13fcf67a8133f76d2a",
+      "wall_seconds": 0.283796751,
+      "hyperfine_json_sha256": "1963db43b995444f36a8777bd931adcb40e11eeeaffb9b8537ca9c37b8e3e49d",
+      "native_file": "hyperfine-4096-3-baseline.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.283796751,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.27699199999999996,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.25407599999999997,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.022916,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 53633024.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 4096,
+      "repeat": 4,
+      "arm": "baseline",
+      "sha256": "b7334dd1ec16d37dea26d574d23f09da6a898c9786b79d13fcf67a8133f76d2a",
+      "wall_seconds": 0.283878552,
+      "hyperfine_json_sha256": "9c8dd74bb0a00527cb2d39219443432e08cc20120e8a277f388943224ad4aa3f",
+      "native_file": "hyperfine-4096-4-baseline.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.283878552,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.277149,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.25213599999999997,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.025013,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 53583872.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 4096,
+      "repeat": 4,
+      "arm": "candidate",
+      "sha256": "b7334dd1ec16d37dea26d574d23f09da6a898c9786b79d13fcf67a8133f76d2a",
+      "wall_seconds": 0.284928216,
+      "hyperfine_json_sha256": "b8ad120f3dee7ad9157f3b9ced47e3e65cca74ea51b9738004a9fd5b05836327",
+      "native_file": "hyperfine-4096-4-candidate.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.284928216,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.278092,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.252903,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.025189,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 53678080.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 131072,
+      "repeat": 0,
+      "arm": "baseline",
+      "sha256": "965da370a0a93761efa732b1bc252c02be96d9c54e21cfaab48dd22b8400b41d",
+      "wall_seconds": 0.29288885200000003,
+      "hyperfine_json_sha256": "4a3337f10679a1502f8ed4abca1e7640f5d94c0b04f2935822f11a4a96785554",
+      "native_file": "hyperfine-131072-0-baseline.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.29288885200000003,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.284924,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.257932,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.026992,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 54255616.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 131072,
+      "repeat": 0,
+      "arm": "candidate",
+      "sha256": "965da370a0a93761efa732b1bc252c02be96d9c54e21cfaab48dd22b8400b41d",
+      "wall_seconds": 0.293463277,
+      "hyperfine_json_sha256": "8392dafbf2db8ee5ddbfd0cfea90085590dc0817e639ef2c94ecd78698c8c39a",
+      "native_file": "hyperfine-131072-0-candidate.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.293463277,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.285722,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.261829,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.023892999999999998,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 54603776.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 131072,
+      "repeat": 1,
+      "arm": "candidate",
+      "sha256": "965da370a0a93761efa732b1bc252c02be96d9c54e21cfaab48dd22b8400b41d",
+      "wall_seconds": 0.289522864,
+      "hyperfine_json_sha256": "a4c5bea7e9ee6b8437b3154fe92e7a40c9d97cf9f728f9bef646ef5053c322d0",
+      "native_file": "hyperfine-131072-1-candidate.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.289522864,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.28170700000000004,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.254925,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.026782,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 54386688.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 131072,
+      "repeat": 1,
+      "arm": "baseline",
+      "sha256": "965da370a0a93761efa732b1bc252c02be96d9c54e21cfaab48dd22b8400b41d",
+      "wall_seconds": 0.288793573,
+      "hyperfine_json_sha256": "c58efd1f027f88eff1cab3b391c771ca640c7c2c9df07d9635435e9283408189",
+      "native_file": "hyperfine-131072-1-baseline.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.288793573,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.28048799999999996,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.249655,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.030833,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 54272000.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 131072,
+      "repeat": 2,
+      "arm": "baseline",
+      "sha256": "965da370a0a93761efa732b1bc252c02be96d9c54e21cfaab48dd22b8400b41d",
+      "wall_seconds": 0.28861172300000004,
+      "hyperfine_json_sha256": "b2c26f5f436657281d79a74e4686bc0456134f8a1315ed5dfa62197179725da1",
+      "native_file": "hyperfine-131072-2-baseline.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.28861172300000004,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.28081999999999996,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.25675,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.024069999999999998,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 54394880.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 131072,
+      "repeat": 2,
+      "arm": "candidate",
+      "sha256": "965da370a0a93761efa732b1bc252c02be96d9c54e21cfaab48dd22b8400b41d",
+      "wall_seconds": 0.29116099700000003,
+      "hyperfine_json_sha256": "c5a447c92fc48018e865f4024f24166e64e8cfcbcb2c97dd72efa509e82963c2",
+      "native_file": "hyperfine-131072-2-candidate.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.29116099700000003,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.28224,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.254117,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.028123,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 54497280.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 131072,
+      "repeat": 3,
+      "arm": "candidate",
+      "sha256": "965da370a0a93761efa732b1bc252c02be96d9c54e21cfaab48dd22b8400b41d",
+      "wall_seconds": 0.29446394400000003,
+      "hyperfine_json_sha256": "c55bce4d09bd183f818e83aa2a15aca4a21bd50454ee7fc69dd3df5bc40cc189",
+      "native_file": "hyperfine-131072-3-candidate.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.29446394400000003,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.28645299999999996,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.258507,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.027946,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 54456320.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 131072,
+      "repeat": 3,
+      "arm": "baseline",
+      "sha256": "965da370a0a93761efa732b1bc252c02be96d9c54e21cfaab48dd22b8400b41d",
+      "wall_seconds": 0.288633745,
+      "hyperfine_json_sha256": "2670d283ba1874da7494c0a9e4ff157bd28c91d96bb835f9b5e617bb3e87d497",
+      "native_file": "hyperfine-131072-3-baseline.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.288633745,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.280356,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.25423,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.026126,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 54378496.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 131072,
+      "repeat": 4,
+      "arm": "baseline",
+      "sha256": "965da370a0a93761efa732b1bc252c02be96d9c54e21cfaab48dd22b8400b41d",
+      "wall_seconds": 0.284748586,
+      "hyperfine_json_sha256": "358c2b541a3e6b7f17393fcabe608727ec8129e4f31a26711a1f93ac35ca8997",
+      "native_file": "hyperfine-131072-4-baseline.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.284748586,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.276572,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.24262499999999998,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.033947,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 54276096.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 131072,
+      "repeat": 4,
+      "arm": "candidate",
+      "sha256": "965da370a0a93761efa732b1bc252c02be96d9c54e21cfaab48dd22b8400b41d",
+      "wall_seconds": 0.287343532,
+      "hyperfine_json_sha256": "bb5d99fb09cf6bdec2315f20c7128fac7ea9b9b0ffeef48557fb7f57b782a0b9",
+      "native_file": "hyperfine-131072-4-candidate.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.287343532,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.27935,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.24931299999999998,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.030036999999999998,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 54452224.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 1048576,
+      "repeat": 0,
+      "arm": "baseline",
+      "sha256": "92ac717cd44b057c03021776e85fa84e5ddd709a805e14f462186db213798c63",
+      "wall_seconds": 0.48212954,
+      "hyperfine_json_sha256": "ad0f0414db1ee6af43fac942ccf4dda42de83e582c8ff7198cd050ac96a3ae44",
+      "native_file": "hyperfine-1048576-0-baseline.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.48212954,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.35668399999999995,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.30644699999999997,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.050237,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 57405440.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 1048576,
+      "repeat": 0,
+      "arm": "candidate",
+      "sha256": "92ac717cd44b057c03021776e85fa84e5ddd709a805e14f462186db213798c63",
+      "wall_seconds": 0.336436285,
+      "hyperfine_json_sha256": "bb859f7985b5e956d150fdc567d3fd023ff11ef68ada86c298ffa8f5c6ad1cc5",
+      "native_file": "hyperfine-1048576-0-candidate.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.336436285,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.31653,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.279468,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.037062,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 59752448.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 1048576,
+      "repeat": 1,
+      "arm": "candidate",
+      "sha256": "92ac717cd44b057c03021776e85fa84e5ddd709a805e14f462186db213798c63",
+      "wall_seconds": 0.334183932,
+      "hyperfine_json_sha256": "8a8ed34bffbb3b6bc1bc8163194e7756eba5e01a79aacfb2b50c636b1f32213e",
+      "native_file": "hyperfine-1048576-1-candidate.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.334183932,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.31326899999999996,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.27236499999999997,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.040903999999999996,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 59813888.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 1048576,
+      "repeat": 1,
+      "arm": "baseline",
+      "sha256": "92ac717cd44b057c03021776e85fa84e5ddd709a805e14f462186db213798c63",
+      "wall_seconds": 0.485252045,
+      "hyperfine_json_sha256": "bb7299c4db6f2cac83dc79d6f942a932727e8b10f69d00a20b91bccc5218b02f",
+      "native_file": "hyperfine-1048576-1-baseline.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.485252045,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.36018,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.314029,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.046151,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 57393152.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 1048576,
+      "repeat": 2,
+      "arm": "baseline",
+      "sha256": "92ac717cd44b057c03021776e85fa84e5ddd709a805e14f462186db213798c63",
+      "wall_seconds": 0.485560553,
+      "hyperfine_json_sha256": "2a21a337752d825e4809b364593e03427f78a4fb49515e36123ae87b0091ace6",
+      "native_file": "hyperfine-1048576-2-baseline.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.485560553,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.359884,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.301067,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.058816999999999994,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 57475072.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 1048576,
+      "repeat": 2,
+      "arm": "candidate",
+      "sha256": "92ac717cd44b057c03021776e85fa84e5ddd709a805e14f462186db213798c63",
+      "wall_seconds": 0.33453560600000004,
+      "hyperfine_json_sha256": "cd431cc5c7e8d2349629e98343e365e356ea5a863b380da9dcd5bd9f3248e78d",
+      "native_file": "hyperfine-1048576-2-candidate.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.33453560600000004,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.31419899999999995,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.27794599999999997,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.036253,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 59723776.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 1048576,
+      "repeat": 3,
+      "arm": "candidate",
+      "sha256": "92ac717cd44b057c03021776e85fa84e5ddd709a805e14f462186db213798c63",
+      "wall_seconds": 0.341238823,
+      "hyperfine_json_sha256": "07eca6f7e2df5c36d88814e7edf1ce77412da9641291e168994275a5d6c6e163",
+      "native_file": "hyperfine-1048576-3-candidate.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.341238823,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.321094,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.28828899999999996,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.032805,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 59801600.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 1048576,
+      "repeat": 3,
+      "arm": "baseline",
+      "sha256": "92ac717cd44b057c03021776e85fa84e5ddd709a805e14f462186db213798c63",
+      "wall_seconds": 0.492687607,
+      "hyperfine_json_sha256": "db00dc958f873df302926369aafe80268487b8b5ba2b3184475a560b8a0f73b8",
+      "native_file": "hyperfine-1048576-3-baseline.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.492687607,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.365167,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.319272,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.045895,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 57606144.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 1048576,
+      "repeat": 4,
+      "arm": "baseline",
+      "sha256": "92ac717cd44b057c03021776e85fa84e5ddd709a805e14f462186db213798c63",
+      "wall_seconds": 0.48376899500000003,
+      "hyperfine_json_sha256": "ea31a67dbf81a5aca3359aa80334e93a84cb668758e96b38fff4841d694cadb6",
+      "native_file": "hyperfine-1048576-4-baseline.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.48376899500000003,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.359008,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.31174399999999997,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.047264,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 57458688.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    },
+    {
+      "size_bytes": 1048576,
+      "repeat": 4,
+      "arm": "candidate",
+      "sha256": "92ac717cd44b057c03021776e85fa84e5ddd709a805e14f462186db213798c63",
+      "wall_seconds": 0.33623731100000004,
+      "hyperfine_json_sha256": "b89c7c6ea51a6bc62e26c6ccfa284d2c3b0e1c8448b9044f2032660addd6955f",
+      "native_file": "hyperfine-1048576-4-candidate.json",
+      "native_measurement": {
+        "time_wall_clock": {
+          "value": 0.33623731100000004,
+          "unit": "second"
+        },
+        "time_cpu": {
+          "value": 0.315597,
+          "unit": "second"
+        },
+        "time_user": {
+          "value": 0.280194,
+          "unit": "second"
+        },
+        "time_system": {
+          "value": 0.035403,
+          "unit": "second"
+        },
+        "memory_peak_resident": {
+          "value": 59891712.0,
+          "unit": "byte"
+        },
+        "exit_code": 0
+      }
+    }
+  ],
+  "limits": [
+    "One host, four loopback servers, one reader at a time, warm file, full CLI including imports and fsync.",
+    "Five repeats per arm do not establish p99, maximum capacity, WAN behavior or production reliability.",
+    "Small-size ranges overlap; retain median regressions without claiming a meaningful regression or improvement.",
+    "Fault/repair correctness is covered separately; these 30 timings use healthy servers.",
+    "Successful output hashes are retained receipts; output files were removed with owned scratch after verification."
+  ]
+}

@@ -18,7 +18,8 @@ import sys
 import time
 from pathlib import Path
 
-from verify import ROOT, Run, _atomic_json
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.verify import ROOT, Run, _atomic_json
 import psutil
 
 

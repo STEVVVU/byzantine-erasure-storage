@@ -1,13 +1,8 @@
 """Deterministic outcome accounting, without servers or timed workloads."""
-import runpy
-import sys
 import unittest
-from pathlib import Path
+from scripts import benchmark
 
-scripts = Path(__file__).resolve().parents[2] / "scripts"
-sys.path.insert(0, str(scripts))
-helpers = runpy.run_path(str(scripts / "benchmark.py"))
-sys.path.pop(0)
+helpers = vars(benchmark)
 
 
 class BenchmarkContractTests(unittest.TestCase):

@@ -1,0 +1,41 @@
+name: Compare BFR read reuse with Hyperfine
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: src
+      BFR_RUN_ID: read-reuse-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.11"
+      - name: Fetch frozen baseline commit
+        run: git fetch --no-tags origin e1ce5826e82810f4154d0d7ced6906bb570ba963
+      - name: Install the hash-locked runtime
+        run: python -m pip install --require-hashes --disable-pip-version-check -r requirements.lock
+      - name: Install verified Hyperfine 2.0.0 in runner temp
+        run: |
+          curl --fail --location --retry 0 -o "$RUNNER_TEMP/hyperfine.tar.gz" https://github.com/sharkdp/hyperfine/releases/download/v2.0.0/hyperfine-v2.0.0-x86_64-unknown-linux-gnu.tar.gz
+          echo 'ae2beda2ac99c098427e4f755244552daf20e514422889cca6d44421e2d93c87  '"$RUNNER_TEMP/hyperfine.tar.gz" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/hyperfine"
+          tar -xzf "$RUNNER_TEMP/hyperfine.tar.gz" -C "$RUNNER_TEMP/hyperfine" --strip-components=1
+      - name: Check the native Hyperfine JSON and command contract
+        run: python -m unittest discover -s coursework/bfr_tests -p test_read_comparison.py -v
+      - name: Compare baseline and candidate reads
+        run: python scripts/compare_read_reuse.py --run-id "$BFR_RUN_ID" --hyperfine "$RUNNER_TEMP/hyperfine/hyperfine"
+      - name: Preserve native measurements and owned-server evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: bfr-read-reuse-${{ github.run_id }}-${{ github.run_attempt }}
+          include-hidden-files: true
+          path: .agents/runs/${{ env.BFR_RUN_ID }}/evidence/
+          if-no-files-found: warn

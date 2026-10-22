@@ -54,6 +54,8 @@ The native Windows journey and its post-launch failure control have passed local
 
 ## Coursework and research
 
+The manual [metrics workflow](.github/workflows/metrics.yml) runs `python scripts/benchmark.py --run-id <fresh-id>` against four real disk-backed processes. The [frozen measurement contract](.agents/skills/verify-bfr/features/metrics.md) covers 4 KiB through the supported 1 MiB limit, scheduled concurrency and fault sweeps, five matched trusted-codec comparisons, exact byte checks, recovery and a separate profile. Full hosted measurements are pending; the functional verification above is not a throughput claim.
+
 The bounded protocol follows the quorum and erasure-storage ideas in the [Stanford CS244b Byzantine RAID project](https://www.scs.stanford.edu/24sp-cs244b/projects/Byzantine_Fault-tolerant_RAID-like_Filesystem.pdf). Persistent reader checkpoints and explicit history comparison adapt part of [SUNDR's signed-history approach](https://www.usenix.org/legacy/events/osdi04/tech/full_papers/li_j/li_j.pdf). These mechanisms are separate from Tahoe's native grid protocol and do not establish the full guarantees of either paper.
 
 ## Protocol and limits

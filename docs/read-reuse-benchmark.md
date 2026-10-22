@@ -51,4 +51,3 @@ Run it after publishing the candidate commit by manually dispatching `.github/wo
 
 
 Hyperfine is downloaded into runner temporary storage, pinned at 2.0.0 and checked against the SHA-256 published for the official x86_64 GNU release asset. Its `--shell=none`, `--runs`, `--warmup`, `--metrics`, and `--export-json` options are documented in the [official v2.0.0 release notes](https://github.com/sharkdp/hyperfine/releases/tag/v2.0.0) and [versioned command reference](https://github.com/sharkdp/hyperfine/blob/v2.0.0/doc/hyperfine.1).
-

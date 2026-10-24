@@ -6,6 +6,128 @@ This repository preserves the full Tahoe-LAFS source tree and Git history at ups
 
 The experiment stores one signed file history across four disk-backed loopback servers. With `n=4`, `b=1`, and `f=2`, it uses two Tahoe erasure shares to reconstruct a stripe, requires three distinct acknowledgments for a mutation, and requires three metadata responses with two matching signed heads. Each owner signs its version history and each stripe's four share digests. The reader verifies those signatures and pins the accepted history in its own persistent state.
 
+## Guide
+
+[Architecture and execution guide](#architecture-and-execution-guide) · [Run it](#run-it) · [Verify](#verify) · [Protocol and limits](#protocol-and-limits) · [Coursework and research](#coursework-and-research)
+
+## Architecture and execution guide
+
+Tahoe-LAFS remains the upstream application, codec and grid implementation. The separate BFR experiment in `bfr/` and `scripts/` adds a bounded four-server protocol using Tahoe's [erasure shares](#erasure-share). A trusted local client coordinates one honest owner per file, signs a [manifest](#signed-manifest) and validates reads. The four servers each store Tahoe share bytes and signed metadata.
+
+```mermaid
+flowchart LR
+  N1["Owner or reader CLI"] --> N2["BFR client"]
+  N2["BFR client"] --> N3["Four loopback HTTP servers"]
+  N2["BFR client"] --> N4["Trusted local keys and checkpoints"]
+  N3 --> N5["Returned server shares"]
+  N5["Four server shares"] --> N6["Tahoe CRS codec adapter"]
+  N2 -->|"encode stripes"| N6
+  N6 -->|"encoded or decoded bytes"| N2
+```
+
+The experiment client coordinates loopback servers and local trust state. It calls Tahoe's erasure codec, while the preserved Tahoe grid application remains separate.
+
+```mermaid
+flowchart TD
+  subgraph Writer["Owner mutation"]
+    N1["Input file"] --> N2["Split into bounded stripes"]
+    N2["Split into bounded stripes"] --> N3["Tahoe encode n=4, k=2"]
+    N3["Tahoe encode n=4, k=2"] --> N4["Sign version and share digests"]
+    N4["Sign version and share digests"] --> Pending["Atomically persist exact pending operation"]
+    Pending --> N5["Post metadata and share bytes"]
+    N5 --> Ack{"Three distinct acknowledgments?"}
+    Ack -->|"yes"| Committed["Resolve mutation and clear pending state"]
+    Ack -->|"no"| N6["Fewer than three acknowledgments"]
+    N6["Fewer than three acknowledgments"] --> N7["Retain already-persisted pending operation"]
+    N7 --> N8["Saved pending operation"]
+    N8["Saved pending operation"] --> N9["Retry exact update"]
+    N9 --> N5
+  end
+  subgraph Reader["Quorum read"]
+    N10["Query server metadata"] --> N11["Require three responses and two matching heads"]
+    N11["Require three responses and two matching heads"] --> N12["Verify owner signature and checkpoint"]
+    N12["Verify owner signature and checkpoint"] --> N13["Fetch two distinct matching shares"]
+    N13["Fetch two distinct matching shares"] --> N14["Verify share digest and decode stripe"]
+    N14 --> N15["Decoded stripes"]
+    N15["Decoded stripes"] --> N16["Write output file"]
+  end
+  N17["Repair request"] --> N18["Reconstruct from two authenticated peer shares"]
+  N18 --> N19["Reconstructed share"]
+  N19["Reconstructed share"] --> N20["Check signed digest before storing"]
+```
+
+Writes persist the exact signed operation before sending it and retain that retry when acknowledgment is uncertain. Reads require a metadata quorum, check the pinned history and share digests, then decode from two distinct Tahoe shares. Repair checks reconstructed bytes against the owner's signed digest.
+
+| Subsystem | Responsibility and owned state | Source |
+| --- | --- | --- |
+| CLI and process journey | Parses commands, configures client state and drives servers for verification. | [`scripts/bfr.py`](scripts/bfr.py), [`scripts/verify.py`](scripts/verify.py) |
+| BFR client | Owns signing keys, pending writes, checkpoints, quorum logic and repair checks. | [`bfr/client.py`](bfr/client.py) |
+| Signed protocol model | Defines version, manifest and share metadata validation. | [`bfr/model.py`](bfr/model.py) |
+| Tahoe codec adapter | Encodes stripes as four shares and decodes from two distinct share IDs. | [`bfr/codec.py`](bfr/codec.py) |
+| Server storage | Persists signed metadata and each server's assigned share bytes. | [`bfr/server.py`](bfr/server.py) |
+| Client trust state | Stores owner keys, pending updates and reader checkpoints under per-file locks. | [`bfr/client.py`](bfr/client.py), [Repository architecture notes](AGENTS.md) |
+
+Execution journey:
+
+1. The owner creates local signing state and gives the client four distinct loopback server URLs.
+2. Create or put splits the file into bounded stripes, asks Tahoe's CRS encoder for four shares per stripe, signs the version and share digests, and atomically saves the exact pending operation before posting the update.
+3. Three distinct server acknowledgments resolve a write. If fewer answer, the client retains the exact signed operation and share bytes; `retry` resends that operation before another mutation starts.
+4. A reader pins the owner's public key, requests metadata and requires a [quorum](#metadata-quorum) of three replies with two matching signed heads. It checks its [checkpoint](#checkpoint) to detect rollback behind its accepted version.
+5. The reader fetches two distinct shares matching the signed manifest, verifies their digests, decodes with Tahoe's CRS decoder and writes the reconstructed output.
+6. If a server missed updates, repair reconstructs its recent retained share from two authenticated peers and checks the owner's signed digest before storage. Missing quorum or failed checks stop the operation.
+
+| Choice in the current implementation | Practical rationale | Alternative and cost to reconsider |
+| --- | --- | --- |
+| Keep the experiment outside Tahoe's grid APIs. | Preserves upstream code and limits protocol effects to its own CLI and loopback servers. | Integrating with the grid requires broader compatibility and security review. |
+| Require three metadata acknowledgments and three metadata responses. | Separates signed-head agreement from the two shares needed for erasure decoding. | Lower thresholds can weaken the stated fault and rollback assumptions. |
+| Use Tahoe's existing CRS encoder and decoder with `n=4`, `k=2`. | Reuses upstream codec behavior and reconstructs a stripe from two distinct shares. | A custom codec adds compatibility and correctness work. |
+| Persist exact pending mutations and per-reader checkpoints. | Retries resend the same operation; checkpoints let readers detect a server rollback behind accepted history. | Stateless retry can create ambiguous duplicate operations; ephemeral checkpoints lose rollback memory. |
+| Assume one honest owner writer and trusted client state. | Matches the implemented key and history model. | Multi-writer support or untrusted client storage requires a different consistency design and is not claimed here. |
+
+These rationales are inferred from current code. The experiment does not provide full SUNDR fork consistency, Byzantine writer tolerance, confidentiality or production security.
+
+<a id="erasure-share"></a>
+
+<details><summary>What is an erasure share?</summary>
+
+An erasure share is one encoded piece of data that can help reconstruct the original. This project uses Tahoe's `n=4`, `k=2` codec, so two distinct authenticated shares reconstruct one stripe.
+</details>
+
+<a id="signed-manifest"></a>
+
+<details><summary>What is a signed manifest?</summary>
+
+A signed manifest is owner-authenticated metadata describing a file version and its share digests. The reader verifies the signature and the downloaded share digest before decoding data.
+</details>
+
+<a id="metadata-quorum"></a>
+
+<details><summary>What is a metadata quorum?</summary>
+
+A metadata quorum is the required set of server responses used to choose a file head. Here a reader needs three responses and two matching signed heads, even though decoding needs only two shares.
+</details>
+
+<a id="checkpoint"></a>
+
+<details><summary>What is a reader checkpoint?</summary>
+
+A reader checkpoint is local saved state for the last accepted signed file version. It lets that reader notice when servers report a history rolled back behind its own checkpoint; it does not prove full fork consistency between all readers.
+</details>
+
+<a id="uncertain-write"></a>
+
+<details><summary>What is an uncertain write?</summary>
+
+An uncertain write is a signed mutation that did not receive enough acknowledgments to resolve. The client saves the exact operation and share bytes so `retry` can resend the same update.
+</details>
+
+<a id="repair"></a>
+
+<details><summary>What is share repair?</summary>
+
+Share repair rebuilds a server's missing recent share from authenticated peer shares. The client checks reconstructed bytes against the owner's signed digest before storing them.
+</details>
+
 ## Run it
 
 Use Python 3.11 and install the hash-locked requirements in an isolated environment:

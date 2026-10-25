@@ -8,6 +8,7 @@ The experiment stores one signed file history across four disk-backed loopback s
 
 ## Guide
 
+[Implementation techniques](#implementation-techniques) ·
 [Architecture and execution guide](#architecture-and-execution-guide) · [Run it](#run-it) · [Verify](#verify) · [Protocol and limits](#protocol-and-limits) · [Coursework and research](#coursework-and-research)
 
 ## Architecture and execution guide
@@ -209,3 +210,257 @@ The bounded protocol follows the quorum and erasure-storage ideas in the [Stanfo
 - The experiment uses plain HTTP bound to literal loopback addresses. Server files and owner private keys are stored unencrypted. It does not provide confidentiality, authenticated owner enrollment, a production security audit, a FUSE mount, or changes to Tahoe's native grid interfaces.
 
 Tahoe-LAFS is provided under its existing GPL-2.0-or-later or TGPPL-1.0 licensing terms; consult [COPYING.GPL](COPYING.GPL), [COPYING.TGPPL.rst](COPYING.TGPPL.rst), and the notices in the upstream files before redistribution.
+## Implementation techniques
+
+The cards describe the separate BFR client, CLI, servers, verification driver, and maintained benchmark paths. Tahoe's preserved grid APIs are outside this experiment; the adapter calls Tahoe's existing CRS codec. The reasons in these cards are inferred from the current code.
+
+| Active subsystem | Technique cards | Source files |
+| --- | --- | --- |
+| Stripe encoding and reconstruction | [Tahoe CRS encoding in bounded stripes](#technique-erasure-signed-stripes) | [`bfr/codec.py`](bfr/codec.py), [`bfr/client.py`](bfr/client.py) |
+| Owner identity, signed records, and share checks | [Owner-signed single-writer version chain](#technique-owner-signed-history), [signed share-manifest verification](#technique-signed-share-manifest), [bounded canonical record validation](#technique-bounded-record-validation) | [`bfr/model.py`](bfr/model.py), [`bfr/client.py`](bfr/client.py), [`bfr/server.py`](bfr/server.py) |
+| Metadata quorum selection | [Metadata response and head quorum](#technique-metadata-quorum) | [`bfr/__init__.py`](bfr/__init__.py), [`bfr/client.py`](bfr/client.py) |
+| CLI and loopback service boundary | [Loopback-only CLI and service boundary](#technique-loopback-cli-boundary) | [`scripts/bfr.py`](scripts/bfr.py), [`bfr/client.py`](bfr/client.py), [`bfr/server.py`](bfr/server.py) |
+| Mutation persistence and locking | [Persist exact mutation before delivery](#technique-pending-before-send), [per-file mutation and checkpoint locks](#technique-per-file-locking) | [`bfr/client.py`](bfr/client.py), [`bfr/server.py`](bfr/server.py) |
+| Reader history checkpoints | [Monotonic reader-history checkpoint](#technique-reader-checkpoint) | [`bfr/client.py`](bfr/client.py), [`bfr/model.py`](bfr/model.py) |
+| Read response reuse | [Read-local full-response reuse with per-stripe checks](#technique-read-local-response-reuse) | [`bfr/client.py`](bfr/client.py), [`coursework/bfr_tests/test_protocol.py`](coursework/bfr_tests/test_protocol.py), [`scripts/verify_read_requests.py`](scripts/verify_read_requests.py) |
+| Share repair and server persistence | [Authenticated repair with ordered atomic installation](#technique-authenticated-repair) | [`bfr/client.py`](bfr/client.py), [`bfr/server.py`](bfr/server.py), [`scripts/verify.py`](scripts/verify.py) |
+| Protocol verification and process ownership | [Full-byte, signed-history, and adversarial oracles](#technique-byte-history-adversarial-oracles) | [`scripts/verify.py`](scripts/verify.py), [`coursework/bfr_tests/test_protocol.py`](coursework/bfr_tests/test_protocol.py), [`scripts/verify_read_requests.py`](scripts/verify_read_requests.py) |
+| Read-reuse measurement | [Alternating complete-CLI comparison with byte gates](#technique-paired-cli-measurement), [scheduled-arrival benchmark with outcome gates](#technique-scheduled-load-outcome-gates) | [`scripts/compare_read_reuse.py`](scripts/compare_read_reuse.py), [`scripts/benchmark.py`](scripts/benchmark.py), [`coursework/bfr_tests/test_benchmark.py`](coursework/bfr_tests/test_benchmark.py), [`coursework/bfr_tests/test_read_comparison.py`](coursework/bfr_tests/test_read_comparison.py) |
+
+<a id="technique-erasure-signed-stripes"></a>
+
+<details>
+<summary>Erasure stripes with signed share digests</summary>
+
+**Mechanism.** The client splits input into bounded stripes, asks Tahoe's CRS codec for four shares, hashes each share and signs a descriptor that binds owner, file, version, stripe, share ID and digest. Reads verify each descriptor before decoding distinct shares. Stripes are at most 128 KiB; the decoder trims each result to its recorded length before joining them.
+
+**Example.** For each stripe, two authenticated share IDs are passed to Tahoe's decoder.
+
+**Why here.** Erasure coding tolerates server loss; signatures bind bytes to the selected version.
+
+**Tradeoffs.** Readers need a metadata quorum. The experiment inherits Tahoe's codec and leaves grid APIs unchanged.
+
+**Code and ownership.** [`bfr/client.py`](bfr/client.py#L339) `_encode_file` and [`bfr/client.py`](bfr/client.py#L293) `_manifest_share`; [`bfr/codec.py`](bfr/codec.py#L14) `encode_data` and `decode_data`. Mixed: extension and Tahoe codec dependency.
+
+</details>
+
+<a id="technique-owner-signed-history"></a>
+
+<details>
+<summary>Owner-signed single-writer version chain</summary>
+
+**Mechanism.** The owner signs canonical JSON updates with Ed25519. Its ID is SHA-256 of its public key. Each version names the prior update hash as parent; `validate_history` checks signatures, owner, file, version, and parent links. An independent reader pins the key with `trust-owner`.
+
+**Example.** Version 2 names the canonical hash of version 1 as its parent.
+
+**Why here.** Readers can verify that a pinned owner signed each version in the chain.
+
+**Tradeoffs.** The experiment assumes one honest writer and trusted client state. Private keys are unencrypted; signatures do not establish owner identity.
+
+**Code and ownership.** [`bfr/model.py`](bfr/model.py#L76) `sign_update` and [`bfr/model.py`](bfr/model.py#L156) `validate_history` implement the chain. [`bfr/client.py`](bfr/client.py#L64) `initialize` and `_owner_public` manage keys. Mixed: extension and Ed25519 dependency.
+
+</details>
+
+<a id="technique-signed-share-manifest"></a>
+
+<details>
+<summary>Signed share-manifest verification</summary>
+
+**Mechanism.** Each update signs every share digest, bound to owner, file, version, stripe, and share ID. The reader checks the selected update and share ID, hashes the bytes, then verifies that descriptor's signature before decoding.
+
+**Example.** A replayed share record for an older signed update fails the version comparison before the client decodes it.
+
+**Why here.** A metadata quorum selects a history, while the signed stripe descriptors bind the fetched bytes to that history.
+
+**Tradeoffs.** These checks prove integrity against a pinned key. They do not encrypt shares or establish owner enrollment.
+
+**Code and ownership.** [`bfr/model.py`](bfr/model.py#L84) `block_message` and [`bfr/model.py`](bfr/model.py#L95) `validate_update` validate descriptors. [`bfr/client.py`](bfr/client.py#L293) `_manifest_share` and [`bfr/client.py`](bfr/client.py#L305) `validate_share_response` check shares. Mixed: extension and Ed25519 dependency.
+
+</details>
+
+<a id="technique-bounded-record-validation"></a>
+
+<details>
+<summary>Bounded canonical record validation</summary>
+
+**Mechanism.** The model signs sorted, compact JSON. It rejects malformed base64 and caps fields, file IDs, versions, file sizes, stripe counts, and histories. The server caps request and stored-record reads. The client rejects replies larger than its response limit.
+
+**Example.** `validate_update` rejects a put above 1 MiB or with stripe lengths that do not sum to the declared file size.
+
+**Why here.** The server applies bounds before persistence; the client validates records before accepting history.
+
+**Tradeoffs.** The fixed limits rule out larger files and histories. They bound individual protocol records, not total disk use.
+
+**Code and ownership.** [`bfr/model.py`](bfr/model.py#L25) `canonical`, [`bfr/model.py`](bfr/model.py#L33) `unb64`, and [`bfr/model.py`](bfr/model.py#L95) `validate_update` define checks. [`bfr/server.py`](bfr/server.py#L131) `Handler._parse_body` caps requests. Extension.
+
+</details>
+
+<a id="technique-metadata-quorum"></a>
+
+<details>
+<summary>Exact-head metadata quorum</summary>
+
+**Mechanism.** The reader verifies histories and chooses the freshest witnessed head. It requires three metadata responses and two matching signed heads, though decoding needs two shares. It selects the highest qualified version and rejects distinct heads tied at that version.
+
+**Example.** Two version-3 votes beat two stale version-2 replies. Two total replies fail the response threshold.
+
+**Why here.** Metadata selection and data reconstruction have separate thresholds.
+
+**Tradeoffs.** Reads fail below three responses, even if two shares remain. This is not full SUNDR fork consistency or Byzantine writer tolerance.
+
+**Code and ownership.** [`bfr/client.py`](bfr/client.py#L192) `_history_votes` selects a head. Extension. [`bfr/__init__.py`](bfr/__init__.py#L8) and [`bfr/__init__.py`](bfr/__init__.py#L9) set response and vote thresholds.
+
+</details>
+
+<a id="technique-loopback-cli-boundary"></a>
+
+<details>
+<summary>Loopback-only CLI and service boundary</summary>
+
+**Mechanism.** The CLI exposes named commands and restricts targets and share IDs to four values. Client URLs require four distinct ports, plain HTTP, and loopback IPs. The client normalizes them to `127.0.0.1`; the server rejects non-loopback binds. CLI errors distinguish uncertain writes from other failures.
+
+**Example.** A client URL with a hostname, path, query, fragment, or repeated port is rejected before an RPC.
+
+**Why here.** The protocol experiment uses local disk-backed servers and trusted client state.
+
+**Tradeoffs.** The service cannot accept remote clients. Plain HTTP and unencrypted keys provide no confidentiality.
+
+**Code and ownership.** [`scripts/bfr.py`](scripts/bfr.py#L25) `parser` and [`scripts/bfr.py`](scripts/bfr.py#L68) `main` route commands. [`bfr/client.py`](bfr/client.py#L115) `_urls` and [`bfr/server.py`](bfr/server.py#L236) `serve` restrict addresses. Extension.
+
+</details>
+
+<a id="technique-pending-before-send"></a>
+
+<details>
+<summary>Persist pending mutation before sending</summary>
+
+**Mechanism.** The client atomically saves the exact signed update, history and encoded share bytes before network delivery. If acknowledgments are insufficient, it retains the pending record so retry resends identical bytes. Per-file OS locks serialize mutation state. Three distinct acknowledgments resolve a write.
+
+**Example.** A timeout after some servers accept a write leaves a retryable operation on disk.
+
+**Why here.** A client crash or uncertain response must not cause a different operation to reuse the same parent version.
+
+**Tradeoffs.** The local state is required for safe retry and must be protected. An uncertain result is not a committed write.
+
+**Code and ownership.** [`bfr/client.py`](bfr/client.py#L154) locking and [`bfr/client.py`](bfr/client.py#L377) `_deliver`. Extension. [`bfr/client.py`](bfr/client.py#L403) `_put_locked` saves before sending; [`bfr/client.py`](bfr/client.py#L450) `_retry_locked` reloads.
+
+</details>
+
+<a id="technique-per-file-locking"></a>
+
+<details>
+<summary>Per-file mutation and checkpoint locks</summary>
+
+**Mechanism.** Mutations and checkpoints use separate OS locks keyed by owner and file. The client uses `msvcrt.locking` on Windows and `fcntl.flock` on POSIX. Each server uses an in-process per-file `threading.Lock` during installation.
+
+**Example.** Older and newer checkpoint writes serialize across client processes; the newer chain remains saved.
+
+**Why here.** Local CLI processes share state, and each server handles threaded HTTP requests.
+
+**Tradeoffs.** Locks serialize one file and require local filesystem lock support. They do not coordinate separate state directories.
+
+**Code and ownership.** [`bfr/client.py`](bfr/client.py#L154) `_os_file_lock`, `_mutation_lock`, `_checkpoint_lock`; [`bfr/server.py`](bfr/server.py#L143) `Handler._install`. Extension.
+
+</details>
+
+<a id="technique-reader-checkpoint"></a>
+
+<details>
+<summary>Per-reader signed-history checkpoint</summary>
+
+**Mechanism.** A reader validates signed history against its saved checkpoint, then atomically advances it under a per-file lock. A history that does not extend the saved chain is rejected. Export and audit compare checkpoints and report same, extension, or divergence.
+
+**Example.** After accepting version 4, a reader rejects version 3 or an empty history.
+
+**Why here.** Local state detects rollback behind one reader's prior observation.
+
+**Tradeoffs.** New readers or lost state have no earlier witness. Checkpoints are not full SUNDR fork consistency.
+
+**Code and ownership.** [`bfr/client.py`](bfr/client.py#L253) `_history_checkpoint`; [`bfr/model.py`](bfr/model.py#L172) `checkpoint_relation`, [`bfr/client.py`](bfr/client.py#L578) `export_checkpoint`. Extension.
+
+</details>
+
+<a id="technique-read-local-response-reuse"></a>
+
+<details>
+<summary>Read-local full-response reuse with per-stripe checks</summary>
+
+**Mechanism.** One read keeps successful full block responses in a local map. `_collect_shares` checks update, share ID, stripe count, digest, and signature for each stripe. It removes a response before checking it; if a check fails, a later stripe fetches it again. Each stripe still needs two distinct valid shares.
+
+**Example.** A multi-stripe read can fetch one full response per server and check each stripe from that response.
+
+**Why here.** Each server reply contains all stripes for that version.
+
+**Tradeoffs.** Reuse lasts one read. A response that fails one stripe is fetched again, and each stripe still needs verification.
+
+**Code and ownership.** [`bfr/client.py`](bfr/client.py#L314) `_collect_shares` and [`bfr/client.py`](bfr/client.py#L486) `read` implement reuse. [`coursework/bfr_tests/test_protocol.py`](coursework/bfr_tests/test_protocol.py#L47) checks stripe validation. Extension.
+
+</details>
+
+<a id="technique-authenticated-repair"></a>
+
+<details>
+<summary>Repair from authenticated peer shares</summary>
+
+**Mechanism.** The repair client gathers verified peer shares, decodes and re-encodes with Tahoe's codec, and checks the target digest. It repairs the selected head before older retained versions. The server validates and atomically replaces share and metadata records while preserving newer history.
+
+**Example.** A returned server receives a recent share reconstructed from two healthy peers.
+
+**Why here.** Repair restores a missing replica without changing the signed file version.
+
+**Tradeoffs.** Repair needs two valid peers per stripe and the original signed descriptor. The server retains eight versions of share bytes.
+
+**Code and ownership.** [`bfr/client.py`](bfr/client.py#L533) `_repair_payloads`, `repair`; [`bfr/server.py`](bfr/server.py#L143) `_install`, `_install_unlocked`. Mixed: extension and Tahoe codec dependency.
+
+</details>
+
+<a id="technique-byte-history-adversarial-oracles"></a>
+
+<details>
+<summary>Full-byte, signed-history, and adversarial oracles</summary>
+
+**Mechanism.** Tests compare reconstructed bytes, versions, requests, and checkpoints. The process driver uses four owned loopback servers and real CLI calls to exercise rollback, old-share replay, missing quorum, retry after restart, repair, deletion, and recreation. Unit cases tamper with signatures, keys, share IDs, and checkpoint order.
+
+**Example.** The read proof compares all 1 MiB of output and checks four metadata plus four block requests through real HTTP and codec calls.
+
+**Why here.** These checks cover outputs and rejection paths through functions and independent processes.
+
+**Tradeoffs.** Finite adversarial inputs do not prove safety against every malicious-server strategy.
+
+**Code and ownership.** [`scripts/verify.py`](scripts/verify.py#L192) `Run.drive`, [`coursework/bfr_tests/test_protocol.py`](coursework/bfr_tests/test_protocol.py#L297), and [`scripts/verify_read_requests.py`](scripts/verify_read_requests.py#L17) contain the oracles. Extension.
+
+</details>
+
+<a id="technique-paired-cli-measurement"></a>
+
+<details>
+<summary>Alternating complete-CLI comparison with byte gates</summary>
+
+**Mechanism.** The comparison uses one baseline and one candidate against the same servers, file, and reader checkpoint. It warms both, alternates order across five pairs, times each full CLI command with Hyperfine, and compares output bytes with input. It also checks that shared protocol, server, CLI, and dependency files match.
+
+**Example.** A 1 MiB run enters the summary only after returning the exact input bytes.
+
+**Why here.** The comparison measures read-local response reuse through the full CLI, including startup and output fsync.
+
+**Tradeoffs.** Results describe one loopback host and tested sizes. They do not establish WAN behavior or throughput.
+
+**Code and ownership.** [`scripts/compare_read_reuse.py`](scripts/compare_read_reuse.py#L39) `run_hyperfine` and [`scripts/compare_read_reuse.py`](scripts/compare_read_reuse.py#L76) `main` define the comparison. [`coursework/bfr_tests/test_read_comparison.py`](coursework/bfr_tests/test_read_comparison.py#L11) checks its Hyperfine contract. Mixed: extension and Hyperfine dependency.
+
+</details>
+
+<a id="technique-scheduled-load-outcome-gates"></a>
+
+<details>
+<summary>Scheduled-arrival benchmark with outcome gates</summary>
+
+**Mechanism.** The benchmark schedules CLI reads at a fixed rate through a thread pool. It hashes each output and counts correct completions, expected two-server quorum rejections, other errors, and timeouts separately. It compares BFR with local disk using Tahoe's codec, without HTTP, signatures, or quorum.
+
+**Example.** Two stopped servers count as an expected rejection only when the CLI reports that exact quorum error and creates no output.
+
+**Why here.** Scheduled arrivals expose queue delay that a closed-loop single reader does not show.
+
+**Tradeoffs.** Finite batches do not establish service capacity. The trusted codec side is not an equivalent security system.
+
+**Code and ownership.** [`scripts/benchmark.py`](scripts/benchmark.py#L37) `load_outcomes`, `expected_quorum_rejection`, `benchmark`; [`coursework/bfr_tests/test_benchmark.py`](coursework/bfr_tests/test_benchmark.py#L25) checks classification. Extension.
+
+</details>

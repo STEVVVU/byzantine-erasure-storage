@@ -8,6 +8,502 @@ The experiment stores one signed file history across four disk-backed loopback s
 
 ## Architecture and execution guide
 
+<!-- execution-flow:start -->
+### Execution flow
+
+Start with the primary path, then expand a detailed workflow. Select a numbered node to see its operation, implementation techniques, and source. Solid arrows show the named control, data, or lifecycle handoff; dotted arrows show error paths. Separate entry points are named in each workflow.
+
+<a id="review-walkthrough"></a>
+
+#### Walk through one concrete example
+
+Read the current signed version of a file through the configured loopback CLI while a reader checkpoint is present.
+
+**Trace.** [Validate loopback CLI inputs](#flow-step-cli-boundary) → [Collect metadata replies and choose witnessed head](#flow-step-metadata-head-quorum) → [Check and save monotonic reader checkpoint](#flow-step-checkpoint-save) → [Fetch and verify shares per stripe](#flow-step-read-fetch-reuse) → [Decode two distinct shares per stripe](#flow-step-decode-read).
+
+**Result and boundary.** The client validates the CLI request, chooses a witnessed metadata head, checks and saves the monotonic reader checkpoint, then fetches and verifies shares per stripe and decodes from two distinct shares. A stripe without two valid shares ends in a read failure rather than returning incomplete bytes.
+
+<details>
+<summary>Implementation decisions to explain</summary>
+
+**Why save a reader checkpoint after choosing a metadata head?** The checkpoint records monotonic reader history so a later read can detect stale or regressing metadata. It introduces persistent reader state that must be checked as part of the read boundary.
+
+[Monotonic reader-history checkpoint](#technique-reader-checkpoint).
+
+**Why does each stripe need two distinct valid shares?** The encoded stripe is reconstructed from two distinct verified shares, while signatures and manifests bind the share data to its owner-signed history. Requiring both means reads stop when a stripe has insufficient valid shares.
+
+[Tahoe CRS encoding in bounded stripes](#technique-erasure-signed-stripes).
+
+</details>
+
+#### Primary execution flow
+
+The client CLI routes a mutation into signed, erasure-coded pending state before delivery, or routes a read through metadata quorum, checkpoint validation, signed share checks and two-share decoding. Retry and repair are separate recovery entries; the verification and measurement drivers are independent workflows.
+
+```mermaid
+flowchart TD
+    n1["1. Validate loopback CLI inputs"]
+    click n1 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-cli-boundary" "Open step, techniques, and source" _top
+    n2["2. Lock mutation and select<br/>signed history"]
+    click n2 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-mutation-lock-history" "Open step, techniques, and source" _top
+    n3["3. Encode stripes and persist<br/>signed pending intent"]
+    click n3 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-encode-sign-persist" "Open step, techniques, and source" _top
+    n4["4. Deliver shares and require<br/>three acknowledgments"]
+    click n4 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-deliver-acks" "Open step, techniques, and source" _top
+    n5["5. Retry the exact pending<br/>operation"]
+    click n5 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-uncertain-retry" "Open step, techniques, and source" _top
+    n6["6. Collect metadata replies and<br/>choose witnessed head"]
+    click n6 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-metadata-head-quorum" "Open step, techniques, and source" _top
+    n7["7. Check and save monotonic<br/>reader checkpoint"]
+    click n7 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-checkpoint-save" "Open step, techniques, and source" _top
+    n8["8. Fetch and verify shares per<br/>stripe"]
+    click n8 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-read-fetch-reuse" "Open step, techniques, and source" _top
+    n9["9. Decode two distinct shares<br/>per stripe"]
+    click n9 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-decode-read" "Open step, techniques, and source" _top
+    n13["13. Validate and persist one<br/>server share"]
+    click n13 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-server-install" "Open step, techniques, and source" _top
+    n12["12. Rebuild a target's retained<br/>signed shares"]
+    click n12 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-repair-peer-shares" "Open step, techniques, and source" _top
+    n1 -->|"create, put or delete"| n2
+    n3 -->|"pending file written"| n4
+    n4 -->|"one PUT per server"| n13
+    n4 -.->|"fewer than three acknowledgments"| n5
+    n5 -->|"retry saved bytes"| n4
+    n1 -->|"read command"| n6
+    n2 -->|"query history for current parent"| n6
+    n6 -->|"selected signed history"| n7
+    n7 -->|"Read invocation: checkpoint accepted<br/>and live put head"| n8
+    n8 -->|"two shares per stripe"| n9
+    n1 -->|"repair command"| n12
+    n7 -->|"Mutation invocation: online parent<br/>history accepted"| n3
+    n2 -->|"Mutation metadata quorum failed but<br/>matching signed local checkpoint<br/>exists"| n3
+```
+
+**Detailed workflows.** [Write a signed file version](#flow-workflow-mutation-and-retry) · [Read a signed version](#flow-workflow-read-and-checkpoint) · [Repair a stale server](#flow-workflow-repair) · [Verify protocol and process lifecycle](#flow-workflow-verification) · [Verify read response reuse](#flow-workflow-read-reuse-proof) · [Compare and measure read workloads](#flow-workflow-measurements) · [Identity, listing and service entries](#flow-workflow-identity-list-service).
+
+<a id="flow-workflow-mutation-and-retry"></a>
+
+<details>
+<summary>Write a signed file version</summary>
+
+Starts at create or put in the client CLI. The mutation lock protects local state, a pending exact update is saved before delivery, and fewer than three acknowledgments leaves it for retry.
+
+```mermaid
+flowchart TD
+    n1["1. Validate loopback CLI inputs"]
+    click n1 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-cli-boundary" "Open step, techniques, and source" _top
+    n2["2. Lock mutation and select<br/>signed history"]
+    click n2 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-mutation-lock-history" "Open step, techniques, and source" _top
+    n6["6. Collect metadata replies and<br/>choose witnessed head"]
+    click n6 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-metadata-head-quorum" "Open step, techniques, and source" _top
+    n7["7. Check and save monotonic<br/>reader checkpoint"]
+    click n7 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-checkpoint-save" "Open step, techniques, and source" _top
+    n3["3. Encode stripes and persist<br/>signed pending intent"]
+    click n3 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-encode-sign-persist" "Open step, techniques, and source" _top
+    n4["4. Deliver shares and require<br/>three acknowledgments"]
+    click n4 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-deliver-acks" "Open step, techniques, and source" _top
+    n5["5. Retry the exact pending<br/>operation"]
+    click n5 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-uncertain-retry" "Open step, techniques, and source" _top
+    n13["13. Validate and persist one<br/>server share"]
+    click n13 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-server-install" "Open step, techniques, and source" _top
+    n1 -->|"create or put"| n2
+    n2 -->|"query history for current parent"| n6
+    n6 -->|"accepted history"| n7
+    n7 -->|"parent history returned"| n3
+    n3 -->|"pending state atomically saved"| n4
+    n4 -->|"per-server request"| n13
+    n4 -.->|"fewer than three acknowledgments"| n5
+    n5 -->|"retry same pending payload"| n4
+    n2 -->|"On metadata QuorumError, matching<br/>validated local checkpoint supplies<br/>parent history"| n3
+    n1 -->|"Explicit retry command loads exact<br/>saved mutation"| n5
+```
+
+</details>
+
+<a id="flow-workflow-read-and-checkpoint"></a>
+
+<details>
+<summary>Read a signed version</summary>
+
+Starts at the reader CLI command with its owner key pinned in trusted local state. Three server responses are required before choosing a witnessed head; the reader then checks its checkpoint and decodes from two distinct verified shares per stripe.
+
+```mermaid
+flowchart TD
+    n1["1. Validate loopback CLI inputs"]
+    click n1 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-cli-boundary" "Open step, techniques, and source" _top
+    n6["6. Collect metadata replies and<br/>choose witnessed head"]
+    click n6 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-metadata-head-quorum" "Open step, techniques, and source" _top
+    n7["7. Check and save monotonic<br/>reader checkpoint"]
+    click n7 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-checkpoint-save" "Open step, techniques, and source" _top
+    n8["8. Fetch and verify shares per<br/>stripe"]
+    click n8 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-read-fetch-reuse" "Open step, techniques, and source" _top
+    n9["9. Decode two distinct shares<br/>per stripe"]
+    click n9 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-decode-read" "Open step, techniques, and source" _top
+    n10["10. Export and compare reader<br/>histories"]
+    click n10 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-checkpoint-exchange" "Open step, techniques, and source" _top
+    n11["11. Stop read when a stripe<br/>lacks two shares"]
+    click n11 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-read-quorum-failure" "Open step, techniques, and source" _top
+    n18["18. Stop an unsupported read"]
+    click n18 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-metadata-read-failure" "Open step, techniques, and source" _top
+    n1 -->|"read command"| n6
+    n6 -->|"selected history"| n7
+    n1 -->|"audit-checkpoints command"| n10
+    n7 -->|"witness accepted"| n8
+    n8 -->|"two distinct signed shares per stripe"| n9
+    n8 -.->|"fewer than two valid shares"| n11
+    n6 -.->|"Too few responding servers or no<br/>unique newest two-vote head"| n18
+    n7 -.->|"Invalid checkpoint, empty history or<br/>tombstone aborts read"| n18
+```
+
+</details>
+
+<a id="flow-workflow-repair"></a>
+
+<details>
+<summary>Repair a stale server</summary>
+
+Starts at the repair CLI command. It first requires quorum history and a checkpoint that does not roll back, then reconstructs retained versions from authenticated peer shares and installs each target payload. Distinct client locks may nest only where code does so; checkpoint lock is separate from mutation lock.
+
+```mermaid
+flowchart TD
+    n1["1. Validate loopback CLI inputs"]
+    click n1 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-cli-boundary" "Open step, techniques, and source" _top
+    n6["6. Collect metadata replies and<br/>choose witnessed head"]
+    click n6 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-metadata-head-quorum" "Open step, techniques, and source" _top
+    n7["7. Check and save monotonic<br/>reader checkpoint"]
+    click n7 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-checkpoint-save" "Open step, techniques, and source" _top
+    n12["12. Rebuild a target's retained<br/>signed shares"]
+    click n12 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-repair-peer-shares" "Open step, techniques, and source" _top
+    n13["13. Validate and persist one<br/>server share"]
+    click n13 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-server-install" "Open step, techniques, and source" _top
+    n1 -->|"repair command"| n6
+    n6 -->|"selected repair history"| n7
+    n7 -->|"checkpoint accepted"| n12
+    n12 -->|"POST verified payload to target"| n13
+```
+
+</details>
+
+<a id="flow-workflow-verification"></a>
+
+<details>
+<summary>Verify protocol and process lifecycle</summary>
+
+An independent driver launches and health-checks four owned loopback servers, runs normal and faulted CLI journeys, records evidence and removes owned scratch/processes. Protocol tests provide deterministic adversarial checks; they do not extend the runtime flow.
+
+```mermaid
+flowchart TD
+    n14["14. Drive process, protocol and<br/>fault journeys"]
+    click n14 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-verify-journey" "Open step, techniques, and source" _top
+```
+
+</details>
+
+<a id="flow-workflow-read-reuse-proof"></a>
+
+<details>
+<summary>Verify read response reuse</summary>
+
+A separate focused driver exercises real HTTP and Tahoe decoding, then checks exact bytes and request counts. It verifies behavior, not timing.
+
+```mermaid
+flowchart TD
+    n15["15. Prove read response reuse<br/>with real HTTP"]
+    click n15 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-request-proof" "Open step, techniques, and source" _top
+```
+
+</details>
+
+<a id="flow-workflow-measurements"></a>
+
+<details>
+<summary>Compare and measure read workloads</summary>
+
+Two independent drivers measure different questions. Hyperfine compares matched baseline/candidate CLI reads; the scheduled-load driver classifies bounded outcomes under its offered rates. Their measurements do not prove production capacity.
+
+```mermaid
+flowchart TD
+    n16["16. Compare baseline and<br/>candidate CLI reads"]
+    click n16 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-paired-cli-measurement" "Open step, techniques, and source" _top
+    n17["17. Measure scheduled reads and<br/>classify outcomes"]
+    click n17 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-scheduled-load-measurement" "Open step, techniques, and source" _top
+```
+
+</details>
+
+<a id="flow-workflow-identity-list-service"></a>
+
+<details>
+<summary>Identity, listing and service entries</summary>
+
+Independent CLI modes. Identity commands use local state; listing contacts metadata services; server starts a separately owned listener.
+
+```mermaid
+flowchart TD
+    n1["1. Validate loopback CLI inputs"]
+    click n1 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-cli-boundary" "Open step, techniques, and source" _top
+    n19["19. Create or pin owner identity"]
+    click n19 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-identity-local" "Open step, techniques, and source" _top
+    n20["20. List witnessed live file<br/>histories"]
+    click n20 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-list-files" "Open step, techniques, and source" _top
+    n21["21. Serve assigned loopback<br/>share"]
+    click n21 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-server-start" "Open step, techniques, and source" _top
+    n13["13. Validate and persist one<br/>server share"]
+    click n13 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-server-install" "Open step, techniques, and source" _top
+    n10["10. Export and compare reader<br/>histories"]
+    click n10 href "https://github.com/STEVVVU/byzantine-erasure-storage#flow-step-checkpoint-exchange" "Open step, techniques, and source" _top
+    n1 -->|"keygen or trust-owner command"| n19
+    n1 -->|"list command"| n20
+    n1 -->|"server command"| n21
+    n21 -->|"POST /v1/put or /v1/repair request<br/>arrives"| n13
+    n1 -->|"export-checkpoint or audit-checkpoints<br/>command"| n10
+```
+
+</details>
+
+#### Steps, techniques, and source
+
+These source traces cover the active scope below. They explain implementation behavior; benchmark results and their limits remain in the measurement sections.
+
+<a id="flow-step-cli-boundary"></a>
+
+##### 1. Validate loopback CLI inputs
+
+**Component.** scripts/bfr.py and bfr.client._urls. The CLI dispatches server startup and checkpoint auditing before state validation, then keygen and trust-owner before URL validation. Other client commands require exactly four distinct-port plain HTTP loopback URLs. Server startup separately rejects non-loopback binds.
+
+**Techniques at this step.** [Loopback-only CLI and service boundary](#technique-loopback-cli-boundary).
+
+**Source.** [`scripts/bfr.py:25`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/scripts/bfr.py#L25) · [`scripts/bfr.py:68`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/scripts/bfr.py#L68) · [`bfr/client.py:115`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L115) · [`bfr/server.py:236`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/server.py#L236). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-mutation-lock-history"></a>
+
+##### 2. Lock mutation and select signed history
+
+**Component.** bfr.client.put, _mutation_lock and _history_for_write. put and delete hold a per-owner/file mutation OS lock while selecting signed metadata history and preparing delivery. On metadata QuorumError, _history_for_write can return a matching validated signed local checkpoint. Online history and successful delivery update checkpoints while holding the mutation lock and acquiring the distinct checkpoint lock.
+
+**Techniques at this step.** [Per-file mutation and checkpoint locks](#technique-per-file-locking) · [Metadata response and head quorum](#technique-metadata-quorum).
+
+**Source.** [`bfr/client.py:179`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L179) · [`bfr/client.py:278`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L278). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-encode-sign-persist"></a>
+
+##### 3. Encode stripes and persist signed pending intent
+
+**Component.** bfr.client._put_locked, bfr.codec and bfr.model. The client encodes nonempty chunks up to 128 KiB as Tahoe CRS n=4,k=2 shares, signs each share digest and the versioned parent-linked manifest, then validates it. It atomically saves the complete history, signed update and exact per-server share bytes before sending requests. Delete instead signs a tombstone with no stripes and saves pending state through the same delivery path.
+
+**Techniques at this step.** [Tahoe CRS encoding in bounded stripes](#technique-erasure-signed-stripes) · [Owner-signed single-writer version chain](#technique-owner-signed-history) · [Signed share-manifest verification](#technique-signed-share-manifest) · [Bounded canonical record validation](#technique-bounded-record-validation) · [Persist exact mutation before delivery](#technique-pending-before-send).
+
+**Source.** [`bfr/client.py:339`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L339) · [`bfr/codec.py:14`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/codec.py#L14) · [`bfr/model.py:76`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/model.py#L76) · [`bfr/model.py:95`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/model.py#L95) · [`bfr/client.py:403`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L403). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-deliver-acks"></a>
+
+##### 4. Deliver shares and require three acknowledgments
+
+**Component.** bfr.client._deliver and bfr.server.Handler._install_unlocked. The client sends one signed history/update and the assigned share to each server. Servers validate signed history and this server's share digest, serialize installation per file, and persist share and metadata; the client clears pending state only after three distinct valid acknowledgments and checkpoint persistence.
+
+**Techniques at this step.** [Persist exact mutation before delivery](#technique-pending-before-send) · [Per-file mutation and checkpoint locks](#technique-per-file-locking).
+
+**Source.** [`bfr/client.py:377`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L377) · [`bfr/server.py:152`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/server.py#L152). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-uncertain-retry"></a>
+
+##### 5. Retry the exact pending operation
+
+**Component.** bfr.client.retry and _retry_locked. If fewer than three acknowledgments arrive, _deliver raises UncertainCommit and leaves the pending file. retry acquires the same mutation lock, validates the saved update and history, then resends the saved update and share bytes; success checkpoints history and removes the pending file.
+
+**Techniques at this step.** [Persist exact mutation before delivery](#technique-pending-before-send) · [Per-file mutation and checkpoint locks](#technique-per-file-locking).
+
+**Source.** [`bfr/client.py:395`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L395) · [`bfr/client.py:442`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L442) · [`bfr/client.py:450`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L450). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-metadata-head-quorum"></a>
+
+##### 6. Collect metadata replies and choose witnessed head
+
+**Component.** bfr.client._history_votes. The client requires three responding servers, validates each signed history, groups replies by exact head hash, and selects the newest version supported by at least two replies. It rejects no qualifying head or multiple divergent heads at the newest witnessed version.
+
+**Techniques at this step.** [Metadata response and head quorum](#technique-metadata-quorum) · [Owner-signed single-writer version chain](#technique-owner-signed-history) · [Bounded canonical record validation](#technique-bounded-record-validation).
+
+**Source.** [`bfr/client.py:192`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L192). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-checkpoint-save"></a>
+
+##### 7. Check and save monotonic reader checkpoint
+
+**Component.** bfr.client._history_checkpoint and bfr.model.validate_checkpoint. Under a separate per-file checkpoint OS lock, the client validates the current signed chain against saved owner, file, head and prefix hashes, then atomically saves the longer chain. An empty server history cannot erase a saved checkpoint.
+
+**Techniques at this step.** [Monotonic reader-history checkpoint](#technique-reader-checkpoint) · [Per-file mutation and checkpoint locks](#technique-per-file-locking).
+
+**Source.** [`bfr/client.py:253`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L253) · [`bfr/model.py:187`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/model.py#L187). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-read-fetch-reuse"></a>
+
+##### 8. Fetch and verify shares per stripe
+
+**Component.** bfr.client.read and _collect_shares. After metadata quorum and checkpoint validation, read requests each stripe from the selected signed version. Within this read only, a successfully verified full server response is reused for later stripes; each stripe rechecks its update, server share ID, digest and owner signature, and evicts a response rejected for that stripe.
+
+**Techniques at this step.** [Read-local full-response reuse with per-stripe checks](#technique-read-local-response-reuse) · [Signed share-manifest verification](#technique-signed-share-manifest) · [Metadata response and head quorum](#technique-metadata-quorum).
+
+**Source.** [`bfr/client.py:486`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L486) · [`bfr/client.py:314`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L314) · [`bfr/client.py:305`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L305). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-decode-read"></a>
+
+##### 9. Decode two distinct shares per stripe
+
+**Component.** bfr.client._decode_stripes and bfr.codec.decode_data. The client requires at least two distinct valid shares for every stripe, selects two IDs, decodes with Tahoe CRS, joins chunks and truncates to the signed file size. The CLI atomically writes the completed bytes only after read returns.
+
+**Techniques at this step.** [Tahoe CRS encoding in bounded stripes](#technique-erasure-signed-stripes).
+
+**Source.** [`bfr/client.py:370`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L370) · [`bfr/codec.py:26`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/codec.py#L26) · [`scripts/bfr.py:91`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/scripts/bfr.py#L91). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-checkpoint-exchange"></a>
+
+##### 10. Export and compare reader histories
+
+**Component.** bfr.client.export_checkpoint, audit_checkpoints and bfr.model.checkpoint_relation. A reader can export its saved signed checkpoint. The audit command validates both checkpoint chains and reports same, extension, or divergent history; the CLI exits with code 2 for divergence.
+
+**Techniques at this step.** [Monotonic reader-history checkpoint](#technique-reader-checkpoint).
+
+**Source.** [`bfr/client.py:578`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L578) · [`bfr/client.py:589`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L589) · [`bfr/model.py:172`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/model.py#L172) · [`scripts/bfr.py:74`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/scripts/bfr.py#L74). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-read-quorum-failure"></a>
+
+##### 11. Stop read when a stripe lacks two shares
+
+**Component.** bfr.client._collect_shares. If fewer than two distinct signed shares validate for a stripe, _collect_shares raises QuorumError. read does not call the decoder or return output bytes.
+
+This is the terminal error branch of the existing two-share threshold.
+
+**Source.** [`bfr/client.py:333`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L333). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-repair-peer-shares"></a>
+
+##### 12. Rebuild a target's retained signed shares
+
+**Component.** bfr.client.repair and _repair_payloads. Repair obtains and checkpoints the metadata history before RPCs, then processes retained versions with the head first. For each put stripe it fetches at least two validated server shares, decodes and re-encodes them, checks the target bytes against the original signed manifest, then sends the verified payload to the target.
+
+**Techniques at this step.** [Authenticated repair with ordered atomic installation](#technique-authenticated-repair) · [Tahoe CRS encoding in bounded stripes](#technique-erasure-signed-stripes) · [Monotonic reader-history checkpoint](#technique-reader-checkpoint) · [Signed share-manifest verification](#technique-signed-share-manifest).
+
+**Source.** [`bfr/client.py:555`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L555) · [`bfr/client.py:533`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L533) · [`bfr/client.py:516`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L516). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-server-install"></a>
+
+##### 13. Validate and persist one server share
+
+**Component.** bfr.server.Handler.do_POST and _install_unlocked. The loopback server accepts bounded JSON, verifies the owner-signed update and supplied history, checks the assigned share's length and digest, serializes installs per file, and rejects conflicting history. It atomically writes share bytes before publishing metadata and prunes share files older than the latest eight versions.
+
+**Techniques at this step.** [Bounded canonical record validation](#technique-bounded-record-validation) · [Signed share-manifest verification](#technique-signed-share-manifest) · [Per-file mutation and checkpoint locks](#technique-per-file-locking) · [Persist exact mutation before delivery](#technique-pending-before-send).
+
+**Source.** [`bfr/server.py:131`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/server.py#L131) · [`bfr/server.py:143`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/server.py#L143) · [`bfr/server.py:152`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/server.py#L152). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-verify-journey"></a>
+
+##### 14. Drive process, protocol and fault journeys
+
+**Component.** scripts.verify.Run. The verifier launches four owned loopback servers, checks their PIDs and health, then drives independent owner and reader flows plus rollback, stale-share, repair, quorum and exact-retry faults. It records evidence, stops only owned processes, removes scratch data and retains evidence.
+
+**Techniques at this step.** [Full-byte, signed-history, and adversarial oracles](#technique-byte-history-adversarial-oracles) · [Loopback-only CLI and service boundary](#technique-loopback-cli-boundary).
+
+**Source.** [`scripts/verify.py:60`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/scripts/verify.py#L60) · [`scripts/verify.py:136`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/scripts/verify.py#L136) · [`scripts/verify.py:192`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/scripts/verify.py#L192) · [`scripts/verify.py:325`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/scripts/verify.py#L325). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-request-proof"></a>
+
+##### 15. Prove read response reuse with real HTTP
+
+**Component.** scripts/verify_read_requests.py. The focused driver starts the real loopback service and CLI, reads a 1 MiB file, verifies exact output bytes and checks request counts. This verifies response reuse behavior; it does not establish a performance gain.
+
+**Techniques at this step.** [Read-local full-response reuse with per-stripe checks](#technique-read-local-response-reuse) · [Full-byte, signed-history, and adversarial oracles](#technique-byte-history-adversarial-oracles).
+
+**Source.** [`scripts/verify_read_requests.py:17`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/scripts/verify_read_requests.py#L17). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-paired-cli-measurement"></a>
+
+##### 16. Compare baseline and candidate CLI reads
+
+**Component.** scripts.compare_read_reuse. The comparison requires a clean candidate distinct from its frozen baseline and matching shared protocol/server files. It performs one warmup and five alternating Hyperfine pairs at each size, validates output bytes each time, and retains timings and cleanup receipts.
+
+**Techniques at this step.** [Alternating complete-CLI comparison with byte gates](#technique-paired-cli-measurement).
+
+**Source.** [`scripts/compare_read_reuse.py:39`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/scripts/compare_read_reuse.py#L39) · [`scripts/compare_read_reuse.py:76`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/scripts/compare_read_reuse.py#L76). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-scheduled-load-measurement"></a>
+
+##### 17. Measure scheduled reads and classify outcomes
+
+**Component.** scripts.benchmark. The benchmark runs finite scheduled and closed-loop read cells against four disk-backed servers, separates exact completions, expected two-server metadata-quorum rejections, other errors and timeouts, and validates bytes for completions. These bounded loopback batches do not establish sustainable service capacity or production latency.
+
+**Techniques at this step.** [Scheduled-arrival benchmark with outcome gates](#technique-scheduled-load-outcome-gates).
+
+**Source.** [`scripts/benchmark.py:37`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/scripts/benchmark.py#L37) · [`scripts/benchmark.py:119`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/scripts/benchmark.py#L119). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-metadata-read-failure"></a>
+
+##### 18. Stop an unsupported read
+
+**Component.** read. Metadata quorum or checkpoint validation errors abort read. Empty history or a selected delete tombstone raises FileNotFoundError before any share collection or output publication.
+
+Explicit CLI operation or error boundary.
+
+**Source.** [`bfr/client.py:487`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L487). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-identity-local"></a>
+
+##### 19. Create or pin owner identity
+
+**Component.** initialize. keygen generates an Ed25519 owner key and public identity in local state; trust-owner validates and pins a supplied 32-byte public key under its derived owner ID. These commands do not contact servers.
+
+**Techniques at this step.** [Owner-signed single-writer version chain](#technique-owner-signed-history).
+
+**Source.** [`bfr/client.py:63`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L63). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-list-files"></a>
+
+##### 20. List witnessed live file histories
+
+**Component.** list_files. list_files collects at least three server listings, unions advertised file IDs and separately selects signed metadata history for each ID. Files lacking metadata quorum are skipped; accepted histories are checkpointed and only put heads are returned.
+
+**Techniques at this step.** [Metadata response and head quorum](#technique-metadata-quorum) · [Monotonic reader-history checkpoint](#technique-reader-checkpoint).
+
+**Source.** [`bfr/client.py:505`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/client.py#L505). [Back to execution flow](#execution-flow).
+
+<a id="flow-step-server-start"></a>
+
+##### 21. Serve assigned loopback share
+
+**Component.** serve. The server validates a loopback bind and share ID, initializes per-file locks and starts ThreadingHTTPServer. GET routes health, listing, metadata and version shares; POST put and repair invoke the validated installation path.
+
+**Techniques at this step.** [Loopback-only CLI and service boundary](#technique-loopback-cli-boundary).
+
+**Source.** [`bfr/server.py:236`](https://github.com/STEVVVU/byzantine-erasure-storage/blob/master/bfr/server.py#L236). [Back to execution flow](#execution-flow).
+
+<details>
+<summary>Scope and subsystem coverage</summary>
+
+BFR single-owner client mutations, signed metadata and shares, metadata quorum reads, reader checkpoints, share repair, four loopback servers, and separate maintained verification, request-count proof, matched client comparison and scheduled-load measurement workflows. Tahoe source is included only for codec calls; no Tahoe grid integration or full SUNDR guarantees are claimed.
+
+- **Stripe encoding and reconstruction.** Tahoe CRS encodes bounded stripes and reconstructs from two distinct authenticated IDs. [Step 3](#flow-step-encode-sign-persist), [Step 9](#flow-step-decode-read), [Step 12](#flow-step-repair-peer-shares).
+- **Owner identity, signed records, and share checks.** Owner-signed history, signed share digests and bounded record validation gate client and server paths. [Step 3](#flow-step-encode-sign-persist), [Step 6](#flow-step-metadata-head-quorum), [Step 8](#flow-step-read-fetch-reuse), [Step 13](#flow-step-server-install).
+- **Metadata quorum selection.** Writes select the current witnessed history; reads require three replies and two matching signed heads. [Step 2](#flow-step-mutation-lock-history), [Step 6](#flow-step-metadata-head-quorum), [Step 8](#flow-step-read-fetch-reuse), [Step 20](#flow-step-list-files), [Step 18](#flow-step-metadata-read-failure).
+- **CLI and loopback service boundary.** CLI routes and validates four loopback servers; the verifier owns only its four loopback processes. [Step 1](#flow-step-cli-boundary), [Step 14](#flow-step-verify-journey), [Step 19](#flow-step-identity-local), [Step 21](#flow-step-server-start).
+- **Mutation persistence and locking.** Per-file client and server locks serialize writes; exact pending bytes survive uncertain acknowledgments. [Step 2](#flow-step-mutation-lock-history), [Step 3](#flow-step-encode-sign-persist), [Step 4](#flow-step-deliver-acks), [Step 5](#flow-step-uncertain-retry), [Step 13](#flow-step-server-install).
+- **Reader history checkpoints.** Checkpoint validation and atomic update guard read/write/repair history; export and comparison are separate commands. [Step 7](#flow-step-checkpoint-save), [Step 10](#flow-step-checkpoint-exchange), [Step 12](#flow-step-repair-peer-shares).
+- **Read response reuse.** Successful full responses are cached only for the current read and validated for each stripe; focused real-HTTP verification counts requests. [Step 8](#flow-step-read-fetch-reuse), [Step 15](#flow-step-request-proof), [Step 11](#flow-step-read-quorum-failure).
+- **Share repair and server persistence.** Repair reconstructs authenticated retained shares and the server stores verified share bytes before metadata. [Step 12](#flow-step-repair-peer-shares), [Step 13](#flow-step-server-install).
+- **Protocol verification and process ownership.** The process driver checks normal and fault paths and records retained evidence; the request-count driver verifies a focused read path. [Step 14](#flow-step-verify-journey), [Step 15](#flow-step-request-proof).
+- **Read-reuse measurement.** Matched CLI timing and scheduled outcome classification are separate measurements with distinct limits. [Step 16](#flow-step-paired-cli-measurement), [Step 17](#flow-step-scheduled-load-measurement).
+
+Outside this flow audit:
+
+- `src/allmydata/`. Tahoe upstream source is called only through the CRS codec adapter; its independent grid and storage runtime is outside this BFR workflow.
+- `allmydata/test/`. Upstream tests are not BFR runtime edges; Tahoe codec smoke checks are verification, not client protocol behavior.
+- `docs/evidence/`. Retained outputs document completed campaigns but do not implement current execution paths.
+
+</details>
+
+<!-- execution-flow:end -->
+
+<details>
+<summary>Subsystem technique index</summary>
+
 ### Subsystem map
 
 Select a subsystem in the diagram to open its techniques, tradeoffs, and code references. The numbered links provide the same navigation. This map groups components; the execution diagrams show their runtime flow.
@@ -49,6 +545,8 @@ flowchart LR
 10. [Read-reuse measurement](#subsystem-read-reuse-measurement)
 
 Tahoe-LAFS remains the upstream application, codec and grid implementation. The separate BFR experiment in `bfr/` and `scripts/` adds a bounded four-server protocol using Tahoe's [erasure shares](#erasure-share). A trusted local client coordinates one honest owner per file, signs a [manifest](#signed-manifest) and validates reads. The four servers each store Tahoe share bytes and signed metadata.
+
+</details>
 
 <details>
 <summary>Expand flow diagram 1</summary>
